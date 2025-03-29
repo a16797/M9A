@@ -57,10 +57,15 @@ class Screenshot(CustomAction):
         return f"{date}-{time}.{milliseconds}"
 
 
-@AgentServer.custom_action("DisableReturnMain")
-class DisableReturnMain(CustomAction):
+@AgentServer.custom_action("DisableNode")
+class DisableNode(CustomAction):
     """
-    保证每次任务只执行一次 ReturnMain 。
+    将特定 node 设置为 disable 状态 。
+
+    参数格式:
+    {
+        "node_name": "结点名称"
+    }
     """
 
     def run(
@@ -69,6 +74,35 @@ class DisableReturnMain(CustomAction):
         argv: CustomAction.RunArg,
     ) -> CustomAction.RunResult:
 
-        context.override_pipeline({"ReturnMain": {"enabled": False}})
+        node_name = json.loads(argv.custom_action_param)["node_name"]
+
+        context.override_pipeline({f"{node_name}": {"enabled": False}})
+
+        return CustomAction.RunResult(success=True)
+
+
+@AgentServer.custom_action("NodeOverride")
+class NodeOverride(CustomAction):
+    """
+    在 node 中执行 pipeline_override 。
+
+    参数格式:
+    {
+        "node_name": {"被覆盖参数": "覆盖值"},
+        "node_name1": {"被覆盖参数": "覆盖值"}
+    }
+    """
+
+    def run(
+        self,
+        context: Context,
+        argv: CustomAction.RunArg,
+    ) -> CustomAction.RunResult:
+
+        nodes = json.loads(argv.custom_action_param)
+
+        for node in nodes:
+            for key in nodes[node]:
+                context.override_pipeline({f"{node}": {f"{key}": nodes[node][key]}})
 
         return CustomAction.RunResult(success=True)
