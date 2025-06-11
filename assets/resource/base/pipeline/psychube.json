@@ -91,9 +91,11 @@
         "action": "Click",
         "timeout": 60000,
         "next": [
-            "PsychubeVictory"
+            "PsychubeVictory",
+            "PsychubeFlagInReplayTwoTimes"
         ],
         "interrupt": [
+            "EatCandy",
             "ReplayingNoNext"
         ]
     },
