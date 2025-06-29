@@ -433,7 +433,6 @@ class AllIn(CustomAction):
                 f"战斗开始：可刷次数 {available_count}, 复现次数 {times}, 已刷次数 {already_count}"
             )
             context.run_task("OpenReplaysTimes")
-            context.run_task("Victory")
             already_count += times
             logger.info(
                 f"战斗结束：可刷次数 {available_count}, 复现次数 {times}, 已刷次数 {already_count}"
