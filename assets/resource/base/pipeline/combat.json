@@ -94,7 +94,7 @@
                 26
             ]
         },
-        "post_delay": 3000,
+        "post_delay": 2000,
         "next_code": "set in code"
     },
     "MainChapter_X": {
@@ -110,32 +110,6 @@
     "MainChapter_XEnter": {
         "recognition": "TemplateMatch",
         "template_code": "Set in code.",
-        "roi": [
-            0,
-            90,
-            1280,
-            460
-        ],
-        "action": "Click",
-        "next": "SwipeLeftAndFindStage"
-    },
-    "MainChapter_2": {
-        "doc": "主线第二章 夜色温柔",
-        "action": "Custom",
-        "custom_action": "SelectChapter",
-        "custom_action_param": {
-            "mainStoryChapter": 1
-        },
-        "next": [
-            "MainChapter_2Enter"
-        ],
-        "interrupt": [
-            "SwipeLeftForChapter"
-        ]
-    },
-    "MainChapter_2Enter": {
-        "recognition": "TemplateMatch",
-        "template": "Combat/MainChapter_2Enter.png",
         "roi": [
             0,
             90,
@@ -535,8 +509,10 @@
         ],
         "action": "Click",
         "next": [
-            "SwitchToReplay",
             "IsReplay"
+        ],
+        "interrupt": [
+            "SwitchToReplay"
         ]
     },
     "IsReplay": {
@@ -550,9 +526,15 @@
             66
         ],
         "next": [
-            "AllIn",
-            "OpenReplaysTimes"
+            //"TargetCount",
+            "AllIn"
         ]
+    },
+    "TargetCount": {
+        "custom_action": "TargetCount",
+        "custom_action_param": {
+            "target_count": 10
+        }
     },
     "SwitchToReplay": {
         "recognition": "TemplateMatch",
@@ -564,85 +546,7 @@
             76
         ],
         "threshold": 0.9,
-        "action": "Click",
-        "next": [
-            "AllIn",
-            "OpenReplaysTimes",
-            "SwitchToReplay"
-        ]
-    },
-    "OpenReplaysTimes": {
-        "recognition": "TemplateMatch",
-        "template": "Combat/OpenReplaysTimes.png",
-        "roi": [
-            737,
-            586,
-            174,
-            134
-        ],
-        "action": "Click",
-        "next": [
-            "SetReplaysTimes",
-            "StartReplay"
-        ]
-    },
-    "SetReplaysTimes": {
-        "recognition": "TemplateMatch",
-        "template_code": "Set in interface.json.",
-        "roi": [
-            751,
-            333,
-            188,
-            347
-        ],
-        "order_by": "Score",
-        "action": "Click",
-        "next": [
-            "SetReplaysTimes",
-            "StartReplay"
-        ]
-    },
-    "StartReplay": {
-        "recognition": "OCR",
-        "expected": [
-            "级",
-            "复",
-            "现"
-        ],
-        "roi": [
-            1030,
-            634,
-            139,
-            33
-        ],
-        "only_rec": true,
-        "action": "Click",
-        "next": [
-            "Replaying",
-            "StartReplay",
-            "RecoveryPage"
-        ]
-    },
-    "RecoveryPage": {
-        "recognition": "OCR",
-        "expected": [
-            "活性",
-            "恢复"
-        ],
-        "roi": [
-            465,
-            571,
-            277,
-            149
-        ],
-        "action": "Click",
-        "target": "StartReplay",
-        "next": [
-            "HomeFlag"
-        ],
-        "interrupt": [
-            "HomeButton"
-        ]
+        "action": "Click"
     },
     "Replaying": {
         "recognition": "OCR",
@@ -685,12 +589,12 @@
             ]
         },
         "next": [
-            "Victory",
-            "AllIn",
-            "HomeFlag"
+            //"Victory"
+            //"AllIn",
+            // "HomeFlag"
         ],
         "interrupt": [
-            "HomeButton"
+            //"HomeButton"
         ]
     },
     "TargetLevelRec": {

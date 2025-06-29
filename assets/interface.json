@@ -92,7 +92,6 @@
             "entry": "Combat",
             "option": [
                 "作战关卡",
-                "复现次数",
                 "刷完全部体力",
                 "吃糖"
             ],
@@ -104,7 +103,6 @@
             "option": [
                 "复刻模式",
                 "活动难度",
-                "复现次数",
                 "刷完全部体力",
                 "吃糖"
             ],
@@ -630,55 +628,6 @@
                 }
             ]
         },
-        "复现次数": {
-            "cases": [
-                {
-                    "name": "x1",
-                    "pipeline_override": {
-                        "SetReplaysTimes": {
-                            "template": [
-                                "Combat/SetReplaysTimesX1.png",
-                                "Combat/SetReplaysTimesX1_selected.png"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "x2",
-                    "pipeline_override": {
-                        "SetReplaysTimes": {
-                            "template": [
-                                "Combat/SetReplaysTimesX2.png",
-                                "Combat/SetReplaysTimesX2_selected.png"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "x3",
-                    "pipeline_override": {
-                        "SetReplaysTimes": {
-                            "template": [
-                                "Combat/SetReplaysTimesX3.png",
-                                "Combat/SetReplaysTimesX3_selected.png"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "x4",
-                    "pipeline_override": {
-                        "SetReplaysTimes": {
-                            "template": [
-                                "Combat/SetReplaysTimesX4.png",
-                                "Combat/SetReplaysTimesX4_selected.png"
-                            ]
-                        }
-                    }
-                }
-            ],
-            "default_case": "x4"
-        },
         "刷完全部体力": {
             "cases": [
                 {
@@ -688,15 +637,16 @@
                             "enabled": true
                         }
                     }
-                },
-                {
-                    "name": "No",
-                    "pipeline_override": {
-                        "AllIn": {
-                            "enabled": false
-                        }
-                    }
                 }
+                // ,
+                // {
+                //     "name": "No",
+                //     "pipeline_override": {
+                //         "AllIn": {
+                //             "enabled": false
+                //         }
+                //     }
+                // }
             ]
         },
         "吃糖": {
@@ -737,15 +687,16 @@
                             ]
                         }
                     }
-                },
-                {
-                    "name": "不吃糖",
-                    "pipeline_override": {
-                        "EatCandy": {
-                            "enabled": false
-                        }
-                    }
                 }
+                // ,
+                // {
+                //     "name": "不吃糖",
+                //     "pipeline_override": {
+                //         "EatCandy": {
+                //             "enabled": false
+                //         }
+                //     }
+                // }
             ]
         },
         "魔精收菜": {

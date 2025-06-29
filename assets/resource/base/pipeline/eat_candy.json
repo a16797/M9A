@@ -1,6 +1,28 @@
 {
     "EatCandy": {
-        "enabled": true,
+        "recognition": "OCR",
+        "expected": [
+            "复现"
+        ],
+        "roi": [
+            1030,
+            634,
+            139,
+            33
+        ],
+        "only_rec": true,
+        "action": "Click",
+        "target": [
+            1230,
+            36,
+            0,
+            0
+        ],
+        "next": [
+            "EatCandyPage"
+        ]
+    },
+    "EatCandyPage": {
         "recognition": "OCR",
         "expected": [
             "活性",

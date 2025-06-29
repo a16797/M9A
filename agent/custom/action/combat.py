@@ -353,3 +353,81 @@ class SelectCombatStage(CustomAction):
         SelectCombatStage.mainStoryChapter = mainStoryChapter
 
         return CustomAction.RunResult(success=True)
+
+
+@AgentServer.custom_action("AllIn")
+class AllIn(CustomAction):
+    """
+    清空体力 。
+
+    参数格式:
+    {
+
+    }
+    """
+
+    def run(
+        self,
+        context: Context,
+        argv: CustomAction.RunArg,
+    ) -> CustomAction.RunResult:
+
+        def _get_available_count():
+            img = context.tasker.controller.post_screencap().wait().get()
+            remaining_ap = int(
+                context.run_recognition("RecognizeRemainingAp", img).best_result.text
+            )
+            stage_ap = int(
+                context.run_recognition("RecognizeStageAp", img).best_result.text
+            )
+            combat_times = int(
+                context.run_recognition("RecognizeCombatTimes", img).best_result.text
+            )
+            stage_ap = stage_ap // combat_times
+            logger.info(f"剩余体力: {remaining_ap}, 关卡体力: {stage_ap}")
+            available_count = remaining_ap // stage_ap
+            return available_count
+
+        # target_count = json.loads(argv.custom_action_param)["target_count"]
+        # 第一次识别
+
+        available_count = _get_available_count()
+
+        if available_count == 0:
+            logger.info("体力不足，准备吃糖")
+
+        already_counts = 0
+        while already_counts <= available_count:
+
+            times = min(4, available_count - already_counts)
+            # logger.info(f"复现次数 {times}")
+            if times <= 0:
+                logger.info(f"没体力咯,看看有没有糖吃")
+                task_detail = context.run_task("EatCandy")
+
+                # 刷完了返回主页，用这个吗？
+                # context.run_task("HomeButton")
+                # return CustomAction.RunResult(success=True)
+
+            context.override_pipeline(
+                {
+                    "StartReplay": {"next": ["Replaying"]},
+                    "SetReplaysTimes": {
+                        "template": [
+                            f"Combat/SetReplaysTimesX{times}.png",
+                            f"Combat/SetReplaysTimesX{times}_selected.png",
+                        ]
+                    },
+                }
+            )
+            logger.info(
+                f"战斗开始：可刷次数 {available_count}, 复现次数 {times}, 已刷次数 {already_counts}"
+            )
+            context.run_task("OpenReplaysTimes")  # 从选择浮现次数开始，执行到战斗胜利。
+            context.run_task("Victory")
+            already_counts += times
+            logger.info(
+                f"战斗结束：可刷次数 {available_count}, 复现次数 {times}, 已刷次数 {already_counts}"
+            )
+
+        return CustomAction.RunResult(success=True)
