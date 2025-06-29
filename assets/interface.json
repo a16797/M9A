@@ -638,15 +638,6 @@
                         }
                     }
                 }
-                // ,
-                // {
-                //     "name": "No",
-                //     "pipeline_override": {
-                //         "AllIn": {
-                //             "enabled": false
-                //         }
-                //     }
-                // }
             ]
         },
         "吃糖": {
@@ -688,15 +679,6 @@
                         }
                     }
                 }
-                // ,
-                // {
-                //     "name": "不吃糖",
-                //     "pipeline_override": {
-                //         "EatCandy": {
-                //             "enabled": false
-                //         }
-                //     }
-                // }
             ]
         },
         "魔精收菜": {
