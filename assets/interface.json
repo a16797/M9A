@@ -100,6 +100,18 @@
             "doc": "图看不清可以拉伸下这个小窗口\n![bydjl](https://mojing.org/tjb)"
         },
         {
+            "name": "常规作战（自定义）",
+            "entry": "Combat",
+            "option": [
+                "吃糖"
+            ],
+            "advanced": [
+                "作战关卡（自定义）",
+                "作战次数"
+            ],
+            "doc": "仅限刷材料关卡，难度填写easy或者hard（无视大小写）\n![bydjl](https://mojing.org/tjb)"
+        },
+        {
             "name": "活动刷取",
             "entry": "JudgeDuringAct",
             "option": [
@@ -226,6 +238,31 @@
                 }
             },
             "doc": "填0清空体力；填其他数字按次数刷；其他情况清空体力"
+        },
+        "作战关卡（自定义）": {
+            "field": [
+                "章节号",
+                "关卡号",
+                "难度"
+            ],
+            "type": [
+                "string",
+                "string",
+                "string"
+            ],
+            "default": [
+                "2",
+                "6",
+                "hard"
+            ],
+            "pipeline_override": {
+                "SelectCombatStage": {
+                    "custom_action_param": {
+                        "stage": "{章节号}-{关卡号}",
+                        "level": "{难度}"
+                    }
+                }
+            }
         }
     },
     "option": {

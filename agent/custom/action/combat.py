@@ -288,7 +288,7 @@ class SelectCombatStage(CustomAction):
 
     # 类静态变量，用于跨任务传递关卡信息
     stage = None
-    stageName = None
+    # stageName = None
     level = None
     mainStoryChapter = None
 
@@ -301,9 +301,9 @@ class SelectCombatStage(CustomAction):
         # 获取关卡信息
         param = json.loads(argv.custom_action_param)
         stage = param["stage"]
-        stageName = param["stageName"]
-        level = param["level"]
-        logger.info(f"当前关卡: {stage}, 名称: {stageName}, 难度: {level}")
+        # stageName = param["stageName"]
+        level = param["level"].capitalize()
+        logger.info(f"当前关卡: {stage}, 难度: {level}")
 
         # 拆分关卡编号，如 "5-19" 拆为 ["5", "19"]
         parts = stage.split("-")
@@ -348,7 +348,7 @@ class SelectCombatStage(CustomAction):
         context.override_pipeline(pipeline)
 
         SelectCombatStage.stage = stage
-        SelectCombatStage.stageName = stageName
+        # SelectCombatStage.stageName = stageName
         SelectCombatStage.level = level
         SelectCombatStage.mainStoryChapter = mainStoryChapter
 
