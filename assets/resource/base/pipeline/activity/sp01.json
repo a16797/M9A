@@ -26,7 +26,7 @@
             }
         },
         "post_wait_freezes": {
-            "time": 100,
+            "time": 300,
             "target": [
                 265,
                 519,
@@ -40,8 +40,7 @@
         "next": [
             "Sub_Sp01RPS",
             "Sub_Sp01DataCollect",
-            "Sub_Sp01Messagers",
-            "HomeFlag"
+            "Sub_Sp01Messagers"
         ],
         "interrupt": [
             "HomeButton",
