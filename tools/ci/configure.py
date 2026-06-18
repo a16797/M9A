@@ -6,11 +6,15 @@ assets_dir = Path(__file__).parent.parent.parent / "assets"
 
 
 def configure_ocr_model():
-    shutil.copytree(
-        assets_dir / "MaaCommonAssets" / "OCR" / "ppocr_v4" / "zh_cn",
-        assets_dir / "resource" / "base" / "model" / "ocr",
-        dirs_exist_ok=True,
-    )
+    # PP-OCRv6 混合组合：det 用 small 档，rec + keys 用 tiny 档
+    ocr_root = assets_dir / "MaaCommonAssets" / "OCR" / "ppocr_v6"
+    target = assets_dir / "resource" / "base" / "model" / "ocr"
+    target.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2(ocr_root / "small" / "det.onnx", target / "det.onnx")
+    shutil.copy2(ocr_root / "tiny" / "rec.onnx", target / "rec.onnx")
+    shutil.copy2(ocr_root / "tiny" / "keys.txt", target / "keys.txt")
+    shutil.copy2(ocr_root / "tiny" / "README.md", target / "README.md")
 
 
 if __name__ == "__main__":
