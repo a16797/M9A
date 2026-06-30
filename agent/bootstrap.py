@@ -55,10 +55,10 @@ def ensure_venv_and_relaunch_if_needed(current_file_path: str):
     则在其中重新启动脚本。支持Linux和Windows系统。
     """
     venv_dir = _venv_dir()
-    logger.info(f"检测到系统: {sys.platform}。当前Python解释器: {sys.executable}")
+    logger.debug(f"检测到系统: {sys.platform}。当前Python解释器: {sys.executable}")
 
     if _is_running_in_our_venv():
-        logger.info(f"已在目标虚拟环境 ({venv_dir}) 中运行。")
+        logger.debug(f"已在目标虚拟环境 ({venv_dir}) 中运行。")
         return
 
     if not venv_dir.exists():
@@ -281,7 +281,7 @@ def _requirements_are_current(digest: str, req_path: Path) -> bool:
             logger.info("运行时依赖已满足，更新 requirements 安装标记")
             _write_requirements_marker(digest)
         else:
-            logger.info("requirements.txt 未变化且依赖已安装，跳过 pip 安装")
+            logger.debug("requirements.txt 未变化且依赖已安装，跳过 pip 安装")
         return True
 
     marker_path = _requirements_marker_path()
@@ -462,9 +462,9 @@ def check_and_install_dependencies():
     logger.debug(f"启用 pip 安装依赖: {enable_pip_install}")
 
     if enable_pip_install:
-        logger.info("开始安装/更新依赖")
+        logger.debug("开始安装/更新依赖")
         if install_requirements(pip_config=pip_config):
-            logger.info("依赖检查和安装完成")
+            logger.info("Python运行依赖已就绪")
         else:
             logger.warning("依赖安装失败，程序可能无法正常运行")
     else:
@@ -477,7 +477,7 @@ def switch_to_dev_work_root(project_root_dir: str | Path):
         work_root=get_runtime_paths().assets_dir,
     )
     os.chdir(paths.work_root)
-    logger.info(f"set cwd: {os.getcwd()}")
+    logger.debug(f"set cwd: {os.getcwd()}")
     return paths
 
 
@@ -488,8 +488,38 @@ def switch_to_release_work_root(project_root_dir: str | Path):
     )
     if Path.cwd().resolve() != paths.work_root:
         os.chdir(paths.work_root)
-        logger.info(f"set cwd: {os.getcwd()}")
+        logger.debug(f"set cwd: {os.getcwd()}")
     return paths
+
+
+def _detect_python_launcher() -> str:
+    launchers = []
+    if os.getenv("UV_RUN_RECURSION_DEPTH"):
+        launchers.append("uv run")
+    if any(name == "debugpy" or name.startswith("debugpy.") for name in sys.modules):
+        launchers.append("debugpy")
+    return " + ".join(launchers) if launchers else "python"
+
+
+def _python_environment() -> str:
+    prefix = Path(sys.prefix).resolve()
+    if prefix == _venv_dir().resolve():
+        return f"项目虚拟环境({prefix})"
+    if sys.prefix != sys.base_prefix:
+        return f"外部虚拟环境({prefix})"
+    return f"系统Python({prefix})"
+
+
+def log_runtime_summary(is_dev_mode: bool) -> None:
+    paths = get_runtime_paths()
+    mode = "dev" if is_dev_mode else "release"
+    logger.info(
+        "Agent运行环境: "
+        f"启动器={_detect_python_launcher()}, "
+        f"模式={mode}, "
+        f"Python环境={_python_environment()}, "
+        f"工作目录={paths.work_root}"
+    )
 
 
 def prepare_and_run_main(current_file_path: str | Path) -> None:
@@ -513,6 +543,8 @@ def prepare_and_run_main(current_file_path: str | Path) -> None:
     os.environ[ENV_PROJECT_ROOT] = str(paths.project_root)
     os.environ[ENV_WORK_ROOT] = str(paths.work_root)
     os.environ[ENV_DEV_MODE] = "1" if is_dev_mode else "0"
+
+    log_runtime_summary(is_dev_mode)
 
     runpy.run_path(str(current_file.with_name("main.py")), run_name="__main__")
 

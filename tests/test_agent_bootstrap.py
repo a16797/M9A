@@ -1,3 +1,5 @@
+import sys
+import types
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -23,6 +25,7 @@ def test_bootstrap_prepares_dev_runtime_before_main(
     monkeypatch.setattr(bootstrap, "check_and_install_dependencies", Mock())
     monkeypatch.setattr(bootstrap, "switch_to_dev_work_root", Mock(return_value=paths))
     monkeypatch.setattr(bootstrap, "switch_to_release_work_root", Mock())
+    monkeypatch.setattr(bootstrap, "log_runtime_summary", Mock())
     monkeypatch.setattr(bootstrap.runpy, "run_path", run_path)
     monkeypatch.delenv(bootstrap.ENV_PROJECT_ROOT, raising=False)
     monkeypatch.delenv(bootstrap.ENV_WORK_ROOT, raising=False)
@@ -36,10 +39,36 @@ def test_bootstrap_prepares_dev_runtime_before_main(
     assert bootstrap.os.environ[bootstrap.ENV_DEV_MODE] == "1"
     bootstrap.switch_to_dev_work_root.assert_called_once_with(tmp_path)
     bootstrap.switch_to_release_work_root.assert_not_called()
+    bootstrap.log_runtime_summary.assert_called_once_with(True)
     run_path.assert_called_once_with(
         str(current_file.with_name("main.py").resolve()),
         run_name="__main__",
     )
+
+
+def test_detect_python_launcher_mentions_uv_and_debugpy(monkeypatch) -> None:
+    monkeypatch.setenv("UV_RUN_RECURSION_DEPTH", "1")
+    monkeypatch.setitem(sys.modules, "debugpy", types.ModuleType("debugpy"))
+
+    assert bootstrap._detect_python_launcher() == "uv run + debugpy"
+
+
+def test_python_environment_uses_sys_prefix_without_virtual_env(
+    monkeypatch, tmp_path: Path
+) -> None:
+    project_venv = tmp_path / ".venv"
+    project_venv.mkdir()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_runtime_paths",
+        Mock(return_value=SimpleNamespace(project_root=tmp_path)),
+    )
+    monkeypatch.setattr(sys, "prefix", str(project_venv))
+    monkeypatch.setattr(sys, "base_prefix", "C:/Python312")
+    monkeypatch.delenv("VIRTUAL_ENV", raising=False)
+
+    assert bootstrap._python_environment() == f"项目虚拟环境({project_venv.resolve()})"
 
 
 def test_main_infers_source_tree_dev_work_root(monkeypatch, tmp_path: Path) -> None:
