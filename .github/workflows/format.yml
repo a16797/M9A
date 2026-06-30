@@ -31,13 +31,18 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version-file: ".python-version"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
 
       - name: Install Node dependencies
         run: pnpm install
 
       - name: Install Python dependencies
-        run: pip install black
+        run: pnpm install:py
 
       - name: Run format
         run: pnpm format:all

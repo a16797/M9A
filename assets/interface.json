@@ -139,8 +139,11 @@
         }
     ],
     "agent": {
-        "child_exec": "python",
+        "child_exec": "uv",
         "child_args": [
+            "run",
+            "--frozen",
+            "python",
             "-u",
             "./../agent/main.py"
         ]

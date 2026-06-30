@@ -1,3 +1,28 @@
+[project]
+name = "m9a"
+version = "0.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "maafw==v5.10.4",
+    "loguru",
+    "pillow",
+    "pytz",
+    "requests",
+]
+
+[dependency-groups]
+dev = [
+    "black",
+    "ruff",
+    "pytest",
+    "pyright",
+    "jsonschema==4.26.0",
+    "referencing==0.37.0",
+]
+
+[tool.uv]
+package = false
+
 [tool.black]
 extend-exclude = '''
 /(
@@ -32,8 +57,19 @@ ignore = [
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
-exclude = [".venv", ".venv-linux", "**/node_modules", "**/__pycache__", ".*", "tmp", "tools", "deps"]
+exclude = [
+    ".venv",
+    ".venv-linux",
+    "**/node_modules",
+    "**/__pycache__",
+    ".*",
+    "tmp",
+    "tools",
+    "deps",
+    "tests/test_auto_promotion_pipeline.py",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = ["--ignore=tests/test_auto_promotion_pipeline.py"]

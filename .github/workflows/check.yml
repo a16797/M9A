@@ -30,6 +30,16 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+
       - name: Run maa-checker
         run: |
           npm ci
@@ -37,5 +47,5 @@ jobs:
 
       - name: Validate JSON Schema
         run: |
-          python -m pip install jsonschema==4.26.0 referencing==0.37.0
-          python tools/validate_schema.py --schema-dir deps/tools --resource-dirs assets/resource --exclude-dirs assets/resource/announcement assets/resource/data assets/resource/tasks --interface-files assets/interface.json --task-dirs assets/resource/tasks
+          uv sync --frozen --group dev
+          uv run --frozen python tools/validate_schema.py --schema-dir deps/tools --resource-dirs assets/resource --exclude-dirs assets/resource/announcement assets/resource/data assets/resource/tasks --interface-files assets/interface.json --task-dirs assets/resource/tasks

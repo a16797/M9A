@@ -1,13 +1,13 @@
 {
     "scripts": {
         "format:json": "prettier --write \"**/*.json\"",
-        "format:py": "black .",
-        "format:all": "pnpm format:json && pnpm format:py",
-        "lint:py": "ruff check .",
-        "typecheck": "pnpm exec pyright",
-        "test": "pytest",
-        "check": "pnpm lint:py && pnpm typecheck && pnpm test",
-        "install:py": "pip install -r requirements.txt -r requirements-dev.txt"
+        "format:py": "node tools/run-uv.mjs run --frozen black .",
+        "format:all": "prettier --write \"**/*.json\" && node tools/run-uv.mjs run --frozen black .",
+        "lint:py": "node tools/run-uv.mjs run --frozen ruff check .",
+        "typecheck": "node tools/run-uv.mjs run --frozen pyright",
+        "test": "node tools/run-uv.mjs run --frozen pytest",
+        "check": "node tools/run-uv.mjs run --frozen ruff check . && node tools/run-uv.mjs run --frozen pyright && node tools/run-uv.mjs run --frozen pytest",
+        "install:py": "node tools/run-uv.mjs sync --frozen --group dev"
     },
     "devDependencies": {
         "@nekosu/maa-tools": "1.0.24",

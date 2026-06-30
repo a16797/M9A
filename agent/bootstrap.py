@@ -1,5 +1,8 @@
+import hashlib
+import importlib.metadata
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +15,10 @@ except ImportError:
     from .utils.runtime_paths import configure_runtime_paths, get_runtime_paths
 
 VENV_NAME = ".venv"
+REQUIREMENTS_MARKER_NAME = ".m9a-requirements.sha256"
+REQUIREMENT_NAME_PATTERN = re.compile(
+    r"^\s*([A-Za-z0-9_.-]+)(?:\[[^\]]+\])?\s*(?:==\s*v?([^;\s]+))?"
+)
 
 
 def configure_initial_runtime_paths(project_root_dir: str | Path):
@@ -201,6 +208,107 @@ def find_local_wheels_dir():
     return None
 
 
+def _requirements_digest(req_path: Path) -> str:
+    return hashlib.sha256(req_path.read_bytes()).hexdigest()
+
+
+def _requirements_marker_path() -> Path:
+    if _is_running_in_our_venv():
+        return _venv_dir() / REQUIREMENTS_MARKER_NAME
+    return get_runtime_paths().debug_dir / REQUIREMENTS_MARKER_NAME
+
+
+def _is_package_installed(package_name: str) -> bool:
+    try:
+        importlib.metadata.version(package_name)
+    except importlib.metadata.PackageNotFoundError:
+        return False
+    return True
+
+
+def _normalize_version(version: str) -> str:
+    return version.strip().lower().removeprefix("v")
+
+
+def _iter_runtime_requirements(req_path: Path):
+    for line in req_path.read_text(encoding="utf-8").splitlines():
+        requirement = line.split("#", 1)[0].strip()
+        if not requirement:
+            continue
+        match = REQUIREMENT_NAME_PATTERN.match(requirement)
+        if match:
+            yield match.group(1), match.group(2)
+
+
+def _runtime_requirements_installed(req_path: Path) -> bool:
+    missing = []
+    mismatched = []
+    for package_name, expected_version in _iter_runtime_requirements(req_path):
+        try:
+            installed_version = importlib.metadata.version(package_name)
+        except importlib.metadata.PackageNotFoundError:
+            missing.append(package_name)
+            continue
+
+        if expected_version and _normalize_version(
+            installed_version
+        ) != _normalize_version(expected_version):
+            mismatched.append(
+                f"{package_name}=={installed_version} (need {expected_version})"
+            )
+
+    if missing:
+        logger.debug(f"缺少运行时依赖: {', '.join(missing)}")
+    if mismatched:
+        logger.debug(f"运行时依赖版本不匹配: {', '.join(mismatched)}")
+    return not missing and not mismatched
+
+
+def _requirements_are_current(digest: str, req_path: Path) -> bool:
+    if _runtime_requirements_installed(req_path):
+        marker_path = _requirements_marker_path()
+        marker_digest = None
+        if marker_path.exists():
+            try:
+                marker_digest = marker_path.read_text(encoding="utf-8").strip()
+            except OSError:
+                logger.debug(f"无法读取依赖安装标记: {marker_path}")
+
+        if marker_digest != digest:
+            logger.info("运行时依赖已满足，更新 requirements 安装标记")
+            _write_requirements_marker(digest)
+        else:
+            logger.info("requirements.txt 未变化且依赖已安装，跳过 pip 安装")
+        return True
+
+    marker_path = _requirements_marker_path()
+    if not marker_path.exists():
+        return False
+
+    try:
+        marker_digest = marker_path.read_text(encoding="utf-8").strip()
+    except OSError:
+        logger.debug(f"无法读取依赖安装标记: {marker_path}")
+        return False
+
+    if marker_digest != digest:
+        logger.debug("requirements.txt 已变化，需要重新安装依赖")
+        return False
+
+    logger.debug("依赖安装标记存在，但运行时依赖不完整，需要重新安装依赖")
+    return False
+
+
+def _write_requirements_marker(digest: str) -> None:
+    marker_path = _requirements_marker_path()
+    try:
+        marker_path.parent.mkdir(parents=True, exist_ok=True)
+        marker_path.write_text(f"{digest}\n", encoding="utf-8")
+        logger.debug(f"写入依赖安装标记: {marker_path}")
+    except OSError:
+        logger.exception(f"写入依赖安装标记失败: {marker_path}")
+
+
 def _run_pip_command(cmd_args: list, operation_name: str) -> bool:
     try:
         logger.info(f"开始 {operation_name}")
@@ -256,6 +364,12 @@ def install_requirements(
         logger.error(f"{req_file} 文件不存在于 {req_path.resolve()}")
         return False
 
+    requirements_digest = _requirements_digest(req_path)
+    logger.debug(f"{req_file} sha256: {requirements_digest}")
+
+    if _requirements_are_current(requirements_digest, req_path):
+        return True
+
     # 查找本地deps目录
     deps_dir = find_local_wheels_dir()
     if deps_dir:
@@ -277,6 +391,7 @@ def install_requirements(
         ]
 
         if _run_pip_command(cmd, "从本地deps安装依赖"):
+            _write_requirements_marker(requirements_digest)
             return True
         else:
             logger.warning("本地deps安装失败，回退到纯在线安装")
@@ -309,6 +424,7 @@ def install_requirements(
             logger.info(f"使用主源 {primary_mirror} 安装依赖")
 
         if _run_pip_command(cmd, f"从 {req_path.name} 安装依赖"):
+            _write_requirements_marker(requirements_digest)
             return True
         else:
             logger.error("在线安装失败")
@@ -328,6 +444,7 @@ def install_requirements(
         ]
 
         if _run_pip_command(cmd, f"从 {req_path.name} 安装依赖 (本地全局配置)"):
+            _write_requirements_marker(requirements_digest)
             return True
         else:
             logger.error("使用pip本地全局配置安装失败")
