@@ -1,50 +1,66 @@
 import os
 import sys
+from contextlib import suppress
+from pathlib import Path
 
-# utf-8
-sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+with suppress(AttributeError):
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
-# 获取当前main.py路径并设置上级目录为工作目录
-current_file_path = os.path.abspath(__file__)
-current_script_dir = os.path.dirname(current_file_path)  # 包含此脚本的目录
-project_root_dir = os.path.dirname(current_script_dir)  # 假定的项目根目录
-
-# 更改CWD到项目根目录
-if os.getcwd() != project_root_dir:
-    os.chdir(project_root_dir)
-print(f"set cwd: {os.getcwd()}")
-
-# 将脚本自身的目录添加到sys.path，以便导入utils、maa等模块
-if current_script_dir not in sys.path:
-    sys.path.insert(0, current_script_dir)
-
-from agent_runtime import run_agent
-from bootstrap import (
-    check_and_install_dependencies,
-    configure_initial_runtime_paths,
-    ensure_venv_and_relaunch_if_needed,
-    read_interface_version,
-    switch_to_dev_work_root,
-)
-
-configure_initial_runtime_paths(project_root_dir)
+ENV_PROJECT_ROOT = "M9A_AGENT_PROJECT_ROOT"
+ENV_WORK_ROOT = "M9A_AGENT_WORK_ROOT"
+ENV_DEV_MODE = "M9A_AGENT_DEV_MODE"
 
 
-def main():
-    current_version = read_interface_version()
-    is_dev_mode = current_version == "DEBUG"
+def _agent_dir() -> Path:
+    return Path(__file__).resolve().parent
 
-    # 如果是Linux系统或开发模式，启动虚拟环境
-    if sys.platform.startswith("linux") or is_dev_mode:
-        ensure_venv_and_relaunch_if_needed(current_file_path)
 
-    check_and_install_dependencies()
+def _project_root() -> Path:
+    env_project_root = os.getenv(ENV_PROJECT_ROOT)
+    if env_project_root:
+        return Path(env_project_root).resolve()
+    return _agent_dir().parent
 
+
+def _is_dev_mode(project_root: Path) -> bool:
+    env_dev_mode = os.getenv(ENV_DEV_MODE)
+    if env_dev_mode is not None:
+        return env_dev_mode == "1"
+    return (
+        not (project_root / "interface.json").exists()
+        and (project_root / "assets" / "interface.json").exists()
+    )
+
+
+def _work_root(project_root: Path, is_dev_mode: bool) -> Path:
+    env_work_root = os.getenv(ENV_WORK_ROOT)
+    if env_work_root:
+        return Path(env_work_root).resolve()
     if is_dev_mode:
-        switch_to_dev_work_root(project_root_dir)
+        return (project_root / "assets").resolve()
+    return project_root.resolve()
 
-    run_agent(project_root_dir=project_root_dir, is_dev_mode=is_dev_mode)
+
+def _prepare_process(work_root: Path) -> None:
+    if Path.cwd().resolve() != work_root:
+        os.chdir(work_root)
+
+    agent_dir = str(_agent_dir())
+    if agent_dir not in sys.path:
+        sys.path.insert(0, agent_dir)
+
+
+def main() -> int:
+    project_root = _project_root()
+    is_dev_mode = _is_dev_mode(project_root)
+    work_root = _work_root(project_root, is_dev_mode)
+    _prepare_process(work_root)
+
+    from agent_runtime import run_agent  # noqa: E402
+
+    result = run_agent(project_root_dir=str(project_root), is_dev_mode=is_dev_mode)
+    return int(result or 0)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

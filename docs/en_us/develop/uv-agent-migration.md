@@ -23,10 +23,13 @@ The current source-tree Agent configuration is in `assets/interface.json`:
 
 ```json
 "agent": {
-    "child_exec": "python",
+    "child_exec": "uv",
     "child_args": [
+        "run",
+        "--frozen",
+        "python",
         "-u",
-        "./../agent/main.py"
+        "./../agent/bootstrap.py"
     ]
 }
 ```
@@ -36,7 +39,7 @@ Release packaging scripts already rewrite this configuration:
 - Windows: `./python/python.exe`
 - macOS: `./python/bin/python3`
 - Linux: `python3`
-- Arguments: `["-u", "./agent/main.py"]`
+- Arguments: `["-u", "./agent/bootstrap.py"]`
 
 This means the source tree may move to `uv run`, but release rewrite logic must stay in place.
 
@@ -137,7 +140,7 @@ The source tree may use:
         "--frozen",
         "python",
         "-u",
-        "./../agent/main.py"
+        "./../agent/bootstrap.py"
     ]
 }
 ```
@@ -153,7 +156,7 @@ Release packages should still be rewritten to platform Python:
     "child_exec": "./python/python.exe",
     "child_args": [
         "-u",
-        "./agent/main.py"
+        "./agent/bootstrap.py"
     ]
 }
 ```
@@ -246,6 +249,27 @@ Acceptance:
 - Second startup does not reinstall dependencies.
 - Changing `requirements.txt` triggers reinstall.
 - Release and development behavior remain consistent.
+
+### Phase 4: Align the Agent Structure and VSCode Debug Entry
+
+Status: implemented. The project structure now follows the `create-maa-project` Agent template more closely: `bootstrap.py` prepares the runtime, while `main.py` only starts AgentServer.
+
+Scope:
+
+- Source-tree `assets/interface.json` launches `uv run --frozen python -u ./../agent/bootstrap.py`.
+- Release packaging rewrites the Agent to platform Python + `./agent/bootstrap.py`.
+- `agent/bootstrap.py` prepares the environment, checks dependencies, switches the development work root to `assets/`, and passes runtime state to `main.py`.
+- `agent/main.py` stays as a thin entrypoint that normalizes cwd/sys.path and calls `agent_runtime.run_agent()`.
+- `maatools.config.mts` maps the VSCode Maa Support uv agent to a debug session.
+- `.vscode/launch.json` and `.vscode/tasks.json` provide VSCode tasks for `install python env`, `check`, and `validate schema`.
+
+Acceptance:
+
+```bash
+npm run install:py
+npm run check
+node tools/run-uv.mjs run --frozen python tools/validate_schema.py --schema-dir deps/tools --resource-dirs assets/resource --exclude-dirs assets/resource/announcement assets/resource/data assets/resource/tasks --interface-files assets/interface.json --task-dirs assets/resource/tasks
+```
 
 ## Non-Goals
 

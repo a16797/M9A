@@ -15,6 +15,7 @@ def test_source_agent_uses_uv_for_development() -> None:
 
     assert agent["child_exec"] == "uv"
     assert agent["child_args"][:3] == ["run", "--frozen", "python"]
+    assert agent["child_args"][-1] == "./../agent/bootstrap.py"
 
 
 @pytest.mark.parametrize(
@@ -33,4 +34,4 @@ def test_release_agent_config_rewrites_uv_entry(
     configure_release_agent(interface, platform)
 
     assert interface["agent"]["child_exec"] == expected_child_exec
-    assert interface["agent"]["child_args"] == ["-u", r"./agent/main.py"]
+    assert interface["agent"]["child_args"] == ["-u", r"./agent/bootstrap.py"]

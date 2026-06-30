@@ -3,6 +3,7 @@ import importlib.metadata
 import json
 import os
 import re
+import runpy
 import subprocess
 import sys
 from pathlib import Path
@@ -16,6 +17,9 @@ except ImportError:
 
 VENV_NAME = ".venv"
 REQUIREMENTS_MARKER_NAME = ".m9a-requirements.sha256"
+ENV_PROJECT_ROOT = "M9A_AGENT_PROJECT_ROOT"
+ENV_WORK_ROOT = "M9A_AGENT_WORK_ROOT"
+ENV_DEV_MODE = "M9A_AGENT_DEV_MODE"
 REQUIREMENT_NAME_PATTERN = re.compile(
     r"^\s*([A-Za-z0-9_.-]+)(?:\[[^\]]+\])?\s*(?:==\s*v?([^;\s]+))?"
 )
@@ -100,10 +104,9 @@ def ensure_venv_and_relaunch_if_needed(current_file_path: str):
     logger.info("正在使用虚拟环境Python重新启动")
 
     try:
-        # Use absolute path to this script when relaunching inside the venv.
-        # sys.argv[0] may be a relative path (e.g. './../agent/main.py') which
-        # resolves differently when cwd changes. Use the absolute path of
-        # the currently running file (`current_file_path`) to avoid that.
+        # Use the absolute bootstrap path when relaunching inside the venv.
+        # sys.argv[0] may be relative to assets/ and resolve differently after
+        # cwd changes.
         script_abs = current_file_path
         args = sys.argv[1:]
         cmd = [str(python_in_venv), str(script_abs)] + args
@@ -476,3 +479,47 @@ def switch_to_dev_work_root(project_root_dir: str | Path):
     os.chdir(paths.work_root)
     logger.info(f"set cwd: {os.getcwd()}")
     return paths
+
+
+def switch_to_release_work_root(project_root_dir: str | Path):
+    paths = configure_runtime_paths(
+        project_root=project_root_dir,
+        work_root=project_root_dir,
+    )
+    if Path.cwd().resolve() != paths.work_root:
+        os.chdir(paths.work_root)
+        logger.info(f"set cwd: {os.getcwd()}")
+    return paths
+
+
+def prepare_and_run_main(current_file_path: str | Path) -> None:
+    current_file = Path(current_file_path).resolve()
+    project_root_dir = current_file.parent.parent
+
+    configure_initial_runtime_paths(project_root_dir)
+    current_version = read_interface_version()
+    is_dev_mode = current_version == "DEBUG"
+
+    if sys.platform.startswith("linux") or is_dev_mode:
+        ensure_venv_and_relaunch_if_needed(str(current_file))
+
+    check_and_install_dependencies()
+
+    if is_dev_mode:
+        paths = switch_to_dev_work_root(project_root_dir)
+    else:
+        paths = switch_to_release_work_root(project_root_dir)
+
+    os.environ[ENV_PROJECT_ROOT] = str(paths.project_root)
+    os.environ[ENV_WORK_ROOT] = str(paths.work_root)
+    os.environ[ENV_DEV_MODE] = "1" if is_dev_mode else "0"
+
+    runpy.run_path(str(current_file.with_name("main.py")), run_name="__main__")
+
+
+def main() -> None:
+    prepare_and_run_main(Path(__file__).resolve())
+
+
+if __name__ == "__main__":
+    main()

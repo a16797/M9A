@@ -63,8 +63,8 @@ For Win32 controller, you can configure:
 "agent": {
     "child_exec": "python",
     "child_args": [
-        "./agent/main.py",
-        "-u"
+        "-u",
+        "./agent/bootstrap.py"
     ]
 }
 ```

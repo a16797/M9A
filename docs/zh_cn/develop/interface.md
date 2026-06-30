@@ -63,8 +63,8 @@ icon: tdesign:system-interface
 "agent": {
     "child_exec": "python",
     "child_args": [
-        "./agent/main.py",
-        "-u"
+        "-u",
+        "./agent/bootstrap.py"
     ]
 }
 ```

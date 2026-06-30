@@ -23,10 +23,13 @@ M9A 当前的源码态 Agent 配置在 `assets/interface.json` 中：
 
 ```json
 "agent": {
-    "child_exec": "python",
+    "child_exec": "uv",
     "child_args": [
+        "run",
+        "--frozen",
+        "python",
         "-u",
-        "./../agent/main.py"
+        "./../agent/bootstrap.py"
     ]
 }
 ```
@@ -36,7 +39,7 @@ M9A 当前的源码态 Agent 配置在 `assets/interface.json` 中：
 - Windows: `./python/python.exe`
 - macOS: `./python/bin/python3`
 - Linux: `python3`
-- 参数统一为 `["-u", "./agent/main.py"]`
+- 参数统一为 `["-u", "./agent/bootstrap.py"]`
 
 因此，迁移时可以把源码态改为 `uv run`，但必须保留打包脚本的 release 改写逻辑。
 
@@ -137,7 +140,7 @@ package = false
         "--frozen",
         "python",
         "-u",
-        "./../agent/main.py"
+        "./../agent/bootstrap.py"
     ]
 }
 ```
@@ -153,7 +156,7 @@ package = false
     "child_exec": "./python/python.exe",
     "child_args": [
         "-u",
-        "./agent/main.py"
+        "./agent/bootstrap.py"
     ]
 }
 ```
@@ -246,6 +249,27 @@ with open("install/interface.json", encoding="utf-8") as file:
 - 第二次启动不会重复安装依赖。
 - 修改 `requirements.txt` 后会重新安装。
 - 发布包和开发态行为一致。
+
+### 第四阶段：对齐 Agent 模板结构与 VSCode 调试入口
+
+状态：已实施。项目结构参考 `create-maa-project` 的 Agent 模板，收敛为 `bootstrap.py` 准备运行时、`main.py` 只启动 AgentServer。
+
+改动范围：
+
+- 源码态 `assets/interface.json` 通过 `uv run --frozen python -u ./../agent/bootstrap.py` 启动。
+- 发布态打包脚本改写为平台 Python + `./agent/bootstrap.py`。
+- `agent/bootstrap.py` 负责环境准备、依赖检查、开发态 `assets/` 工作目录切换，并把运行状态传给 `main.py`。
+- `agent/main.py` 保持薄入口，只标准化 cwd/sys.path 并调用 `agent_runtime.run_agent()`。
+- `maatools.config.mts` 增加 VSCode Maa Support 的 uv agent 调试映射。
+- 新增 `.vscode/launch.json` 与 `.vscode/tasks.json`，可在 VSCode 中运行 `install python env`、`check` 和 `validate schema` 任务。
+
+验收：
+
+```bash
+npm run install:py
+npm run check
+node tools/run-uv.mjs run --frozen python tools/validate_schema.py --schema-dir deps/tools --resource-dirs assets/resource --exclude-dirs assets/resource/announcement assets/resource/data assets/resource/tasks --interface-files assets/interface.json --task-dirs assets/resource/tasks
+```
 
 ## 不做的事
 

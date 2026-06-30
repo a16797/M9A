@@ -145,7 +145,7 @@
             "--frozen",
             "python",
             "-u",
-            "./../agent/main.py"
+            "./../agent/bootstrap.py"
         ]
     },
     "task": [],

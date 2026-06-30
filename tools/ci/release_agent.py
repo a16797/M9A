@@ -18,7 +18,7 @@ def configure_release_agent(interface: dict, platform: str | None = None) -> Non
         raise RuntimeError("interface.json must contain an agent object")
 
     agent["child_exec"] = release_agent_child_exec(platform)
-    agent["child_args"] = ["-u", r"./agent/main.py"]
+    agent["child_args"] = ["-u", r"./agent/bootstrap.py"]
     assert_release_agent_config(interface)
 
 

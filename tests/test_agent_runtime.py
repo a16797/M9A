@@ -46,7 +46,7 @@ def test_maa_log_dir_matches_pre_refactor_relative_debug_path() -> None:
         return_value=(fake_utils, fake_get_runtime_paths),
     ):
         with patch.dict(sys.modules, fake_modules):
-            with patch.object(sys, "argv", ["agent/main.py", "socket-id"]):
+            with patch.object(sys, "argv", ["agent/bootstrap.py", "socket-id"]):
                 agent_runtime.run_agent("C:/Users/example/新建文件夹", is_dev_mode=True)
 
     fake_tasker.Tasker.set_log_dir.assert_called_once_with("./debug")

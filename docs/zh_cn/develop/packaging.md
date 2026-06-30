@@ -26,7 +26,8 @@ project/
 ├──.github/workflows/
 │   └── install.yml              # CI/CD 打包流程
 ├── agent/
-│   ├── main.py                  # Agent 主入口文件
+│   ├── bootstrap.py             # Agent 运行时准备入口
+│   ├── main.py                  # AgentServer 薄入口
 │   ├── utils/                   # 工具模块（日志、配置、热更新等）
 │   └── custom/                  # 自定义业务逻辑
 ├── assets/                      # 资源文件（图片、配置等）
@@ -43,7 +44,8 @@ project/
 ```bash
 install/                     # 打包产物目录（CI/CD 生成）
 ├── agent/
-│   ├── main.py              # Agent 主入口文件
+│   ├── bootstrap.py         # Agent 运行时准备入口
+│   ├── main.py              # AgentServer 薄入口
 │   ├── utils/               # 工具模块（日志、配置、热更新等）
 │   └── custom/              # 自定义业务逻辑
 ├── python/                  # 嵌入式 Python 环境（Windows/macOS）
@@ -57,11 +59,11 @@ install/                     # 打包产物目录（CI/CD 生成）
 └── interface.json           # 版本信息
 ```
 
-## Agent 主入口文件解析
+## Agent 启动入口解析
 
 ### 核心功能模块
 
-`agent/main.py` 包含以下核心功能：
+`agent/bootstrap.py` 负责运行时准备，`agent/main.py` 只负责标准化 cwd/sys.path 并启动 AgentServer。核心功能包括：
 
 #### 1. 虚拟环境管理
 
@@ -300,7 +302,7 @@ steps:
 Agent 通过 MaaFramework 的 `AgentServer` 启动：
 
 ```python
-# main.py 入口
+# bootstrap.py 入口
 if __name__ == "__main__":
     main()
 
@@ -316,8 +318,8 @@ def main():
     # 3. 检查并安装依赖
     check_and_install_dependencies()
 
-    # 4. 启动 AgentServer
-    agent(is_dev_mode=is_dev_mode)
+    # 4. 切换工作目录并运行 main.py
+    runpy.run_path("agent/main.py", run_name="__main__")
 ```
 
 ### 命令行参数
@@ -337,7 +339,7 @@ AgentServer.shut_down()
 **调用示例：**
 
 ```bash
-python agent/main.py <socket_id>
+python agent/bootstrap.py <socket_id>
 ```
 
 ## 其他项目如何复制修改
@@ -351,7 +353,8 @@ your-project/
 ├── .github/workflows/
 │   └── install.yml                 # 根据需求修改
 ├── agent/
-│   ├── main.py                     # 复制并修改
+│   ├── bootstrap.py                # 复制并修改
+│   ├── main.py                     # 薄入口，通常少量修改
 │   └── utils/                      # 工具模块
 │       ├── __init__.py             # 必需：模块初始化，按需修改
 │       ├── logger.py               # 必需：日志模块
@@ -369,7 +372,7 @@ your-project/
 
 ### 2. 修改要点
 
-#### agent/main.py
+#### agent/bootstrap.py 与 agent/main.py
 
 需要修改的部分：
 

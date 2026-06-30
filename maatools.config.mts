@@ -116,6 +116,11 @@ const config: FullConfig = {
       "unknown-task": 'warning'
     },
   },
+  vscode: {
+    agents: {
+      uv: 'Maa Agent: Debug',
+    },
+  },
 }
 
 export default config
