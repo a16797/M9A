@@ -65,7 +65,6 @@ M9A 本仓库：
 ## 验收清单
 
 - `npm run check`
-- `node tools/run-uv.mjs run --frozen python tools/validate_schema.py`
 - `npm exec -- @nekosu/maa-tools check`
 - `python tools/ci/install.py v0.0.0-ci.template-test win-x64`
 - `python tools/ci/install_mxu.py v0.0.0-ci.template-test`

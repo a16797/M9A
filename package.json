@@ -1,13 +1,13 @@
 {
     "scripts": {
         "format:json": "prettier --write \"**/*.json\"",
-        "format:py": "node tools/run-uv.mjs run --frozen black .",
-        "format:all": "prettier --write \"**/*.json\" && node tools/run-uv.mjs run --frozen black .",
-        "lint:py": "node tools/run-uv.mjs run --frozen ruff check .",
-        "typecheck": "node tools/run-uv.mjs run --frozen pyright",
-        "test": "node tools/run-uv.mjs run --frozen pytest",
-        "check": "node tools/run-uv.mjs run --frozen ruff check . && node tools/run-uv.mjs run --frozen pyright && node tools/run-uv.mjs run --frozen pytest",
-        "install:py": "node tools/run-uv.mjs sync --frozen --group dev"
+        "format:py": "uv run --frozen black .",
+        "format:all": "prettier --write \"**/*.json\" && uv run --frozen black .",
+        "lint:py": "uv run --frozen ruff check .",
+        "typecheck": "uv run --frozen pyright",
+        "test": "uv run --frozen pytest",
+        "check": "uv run --frozen ruff check . && uv run --frozen pyright && uv run --frozen pytest",
+        "install:py": "uv sync --frozen --group dev"
     },
     "devDependencies": {
         "@nekosu/maa-tools": "1.0.24",
