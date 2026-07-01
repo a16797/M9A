@@ -285,6 +285,18 @@ jobs:
         env:
           PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
+          copy_no_overwrite() {
+            local src="$1"
+            local dst="$2"
+            mkdir -p "$dst"
+
+            if command -v rsync >/dev/null 2>&1; then
+              rsync -a --ignore-existing "$src"/ "$dst"/
+            else
+              cp -rpvn "$src"/. "$dst"/ || true
+            fi
+          }
+
           py="${{ matrix.python }}"
 
           "$py" tools/ci/download_deps.py --deps-dir install/deps
@@ -296,27 +308,24 @@ jobs:
 
           "$py" tools/ci/install.py "${{ needs.meta.outputs.tag }}" "${{ matrix.package_platform }}"
           if [ "${{ matrix.os }}" = "windows" ]; then
-            cp -rpvn tools/registry/. install/
+            copy_no_overwrite tools/registry install
           fi
 
           if [ "${{ matrix.build_mxu }}" = "true" ]; then
             "$py" tools/ci/install_mxu.py "${{ needs.meta.outputs.tag }}"
             if [ "${{ matrix.os }}" = "windows" ]; then
-              cp -rpvn tools/registry/. install-mxu/
+              copy_no_overwrite tools/registry install-mxu
             fi
             if [ -d "install/python" ]; then
-              mkdir -p install-mxu/python
-              cp -rpvn install/python/. install-mxu/python/
+              copy_no_overwrite install/python install-mxu/python
             fi
             if [ -d "install/deps" ]; then
-              mkdir -p install-mxu/deps
-              cp -rpvn install/deps/. install-mxu/deps/
+              copy_no_overwrite install/deps install-mxu/deps
             fi
           fi
 
           if [ -d "MFA" ]; then
-            mkdir -p install
-            cp -rpvn MFA/. install/
+            copy_no_overwrite MFA install
             if [ -f "install/MFAAvalonia.exe" ]; then
               mv -f install/MFAAvalonia.exe install/M9A.exe
             elif [ -f "install/MFAAvalonia" ]; then
