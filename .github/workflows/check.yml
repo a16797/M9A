@@ -8,14 +8,17 @@ on:
       - ".github/workflows/check.yml"
       - ".node-version"
       - ".npmrc"
+      - "deps/tools/**/*.json"
       - "interface.json"
       - "resource/**"
       - "data/**"
       - "tasks/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "pyproject.toml"
       - "requirements*.txt"
+      - "tools/validate-schema.mjs"
       - "**.py"
   pull_request:
     branches:
@@ -24,14 +27,17 @@ on:
       - ".github/workflows/check.yml"
       - ".node-version"
       - ".npmrc"
+      - "deps/tools/**/*.json"
       - "interface.json"
       - "resource/**"
       - "data/**"
       - "tasks/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "pyproject.toml"
       - "requirements*.txt"
+      - "tools/validate-schema.mjs"
       - "**.py"
   workflow_dispatch:
 
@@ -53,7 +59,8 @@ jobs:
           node-version-file: ".node-version"
           cache: "pnpm"
 
-      - name: Run maa-checker
+      - name: Run schema and maa checks
         run: |
           pnpm install --frozen-lockfile --trust-lockfile
+          pnpm check:schema
           pnpm check:maa

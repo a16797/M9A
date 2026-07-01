@@ -3,10 +3,36 @@ name: lint
 on:
   push:
     branches: ["**"]
-    paths: ["**.py", "pyproject.toml", "requirements*.txt", "uv.lock", ".python-version", ".node-version", ".npmrc", "package.json", "pnpm-lock.yaml", ".github/workflows/lint.yml"]
+    paths:
+      - "**.py"
+      - "pyproject.toml"
+      - "requirements*.txt"
+      - "uv.lock"
+      - ".python-version"
+      - ".node-version"
+      - ".npmrc"
+      - "deps/tools/**/*.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tools/validate-schema.mjs"
+      - ".github/workflows/lint.yml"
   pull_request:
     branches: ["**"]
-    paths: ["**.py", "pyproject.toml", "requirements*.txt", "uv.lock", ".python-version", ".node-version", ".npmrc", "package.json", "pnpm-lock.yaml", ".github/workflows/lint.yml"]
+    paths:
+      - "**.py"
+      - "pyproject.toml"
+      - "requirements*.txt"
+      - "uv.lock"
+      - ".python-version"
+      - ".node-version"
+      - ".npmrc"
+      - "deps/tools/**/*.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tools/validate-schema.mjs"
+      - ".github/workflows/lint.yml"
   workflow_dispatch:
 
 jobs:
@@ -37,6 +63,9 @@ jobs:
 
       - name: Install Python dependencies
         run: pnpm install:py
+
+      - name: Schema shape check
+        run: pnpm check:schema
 
       - name: Ruff lint
         run: pnpm lint:py

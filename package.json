@@ -1,5 +1,9 @@
 {
+    "name": "m9a",
+    "version": "0.0.0",
+    "license": "AGPL-3.0-or-later",
     "private": true,
+    "type": "module",
     "packageManager": "pnpm@11.9.0",
     "engines": {
         "node": ">=24"
@@ -12,8 +16,9 @@
         "typecheck": "uv run --frozen pyright",
         "test": "uv run --frozen pytest",
         "check:py": "uv run --frozen ruff check . && uv run --frozen pyright && uv run --frozen pytest",
+        "check:schema": "node tools/validate-schema.mjs",
         "check:maa": "maa-tools check",
-        "check": "uv run --frozen ruff check . && uv run --frozen pyright && uv run --frozen pytest && maa-tools check",
+        "check": "uv run --frozen ruff check . && uv run --frozen pyright && uv run --frozen pytest && node tools/validate-schema.mjs && maa-tools check",
         "install:py": "uv sync --frozen --group dev"
     },
     "devDependencies": {
