@@ -8,16 +8,22 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   update:
     runs-on: ubuntu-latest
     if: github.repository == 'MAA1999/M9A'
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           show-progress: false
+          fetch-depth: 0
 
       - name: Download latest image
         run: |
@@ -56,4 +62,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git commit -m "chore: update mojing tjb image" -m "[skip changelog]"
-          git push
+          git push origin "HEAD:$GITHUB_REF_NAME"

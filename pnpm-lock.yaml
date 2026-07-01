@@ -12,17 +12,17 @@ importers:
         specifier: 1.0.24
         version: 1.0.24
       '@nekosu/prettier-plugin-maafw-sort':
-        specifier: ^1.0.5
+        specifier: 1.0.5
         version: 1.0.5
       prettier:
-        specifier: 3.5.3
-        version: 3.5.3
+        specifier: 3.8.4
+        version: 3.8.4
       prettier-plugin-multiline-arrays:
-        specifier: 4.1.4
-        version: 4.1.4(prettier@3.5.3)
+        specifier: 4.1.9
+        version: 4.1.9(prettier@3.8.4)
       pyright:
-        specifier: ^1.1.400
-        version: 1.1.409
+        specifier: ^1.1.411
+        version: 1.1.411
 
 packages:
 
@@ -42,12 +42,24 @@ packages:
     resolution: {integrity: sha512-OjgOPvRnKWtBfPwNGkTEIxF5e29AjOlcCq59btwHsevQuWATMYSzF1TNHaXYQyRjTx/zbNJVMBwjHl+eAD2bHw==}
     engines: {node: '>=22'}
 
+  '@augment-vir/assert@31.73.2':
+    resolution: {integrity: sha512-Nd6117MTaPLyB9ehpXG1DpMPbgn6ApF8+cACnwjcEtaEtaGEpmDP43rZRyZbiuHa9bQEF98H9aXu+ipyoN/C3Q==}
+    engines: {node: '>=22'}
+
   '@augment-vir/common@31.67.0':
     resolution: {integrity: sha512-RNjhKj2jfpBcgrYaKopO1GiwjTzI0Zq0XgkE9yAoAxF+BDyFPKchzJRaWyhEXOA+mxKZG4et3gqfZJOpswGqGw==}
     engines: {node: '>=22'}
 
+  '@augment-vir/common@31.73.2':
+    resolution: {integrity: sha512-YUOv1QXW6o5QOaHA5EvbfkfpmLqIzNGCAApx+qh5ZpQy+1j4Io1cZv1FkEcmWSVvJdPlnlRdBfPFEJSrN4w0aQ==}
+    engines: {node: '>=22'}
+
   '@augment-vir/core@31.67.0':
     resolution: {integrity: sha512-Oqkpdw77jJq2Fx6tyajHcPIk4xqfqDjPlBuDy+2K6eaN8BPQ4gtsL/nZfZ9/wVGHje+eFELWiUaEllGxTVQMFw==}
+    engines: {node: '>=22'}
+
+  '@augment-vir/core@31.73.2':
+    resolution: {integrity: sha512-DK0ApXwmlPuZYw/h9OxvcdCi8WrYiqnY3FVGK5mP9dbp1QI7Z3kyFHk2pPHWElld1UFOxQsJn4HuXsQpx5PvCw==}
     engines: {node: '>=22'}
 
   '@babel/helper-string-parser@7.27.1':
@@ -64,6 +76,10 @@ packages:
 
   '@date-vir/duration@8.2.0':
     resolution: {integrity: sha512-LdGi0s4y+H9XJj87m/sBBy5aIxl8kN9haI3IV9Znnyx5eKoLHkwuCAzrB77GHZp3uEacCiCYDvRTefrItYh1uw==}
+    engines: {node: '>=22'}
+
+  '@date-vir/duration@8.6.1':
+    resolution: {integrity: sha512-+Aaib+PvWu6jsbLqcXjsx12+/mqpYFwkk1mF0YLTId17sLRJvwlDhY+1OwtnA9hj5UaXbl9GOw3ApvcNQ2xC0w==}
     engines: {node: '>=22'}
 
   '@gar/promise-retry@1.0.3':
@@ -95,6 +111,10 @@ packages:
 
   '@nekosu/simple-parser@1.0.0':
     resolution: {integrity: sha512-Jf3tGs3/0D8XJtjRguInFh8ofGdCk6PcDK2V7HEZTXA4RN/9kk527I6pAX4zqPEUU8ISNu8dCR9F+KAn1U6tdg==}
+
+  '@noble/hashes@2.2.0':
+    resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
+    engines: {node: '>= 20.19.0'}
 
   '@npmcli/agent@4.0.0':
     resolution: {integrity: sha512-kAQTcEN9E8ERLVg5AsGwLNoFb+oEG6engbqAU2P43gD4JEIkNGMHdVQ096FsOAAYpZPB0RSt0zgInKIAS1l5QA==}
@@ -132,6 +152,10 @@ packages:
   '@npmcli/run-script@10.0.4':
     resolution: {integrity: sha512-mGUWr1uMnf0le2TwfOZY4SFxZGXGfm4Jtay/nwAa2FLNAKXUoUwaGwBMNH36UHPtinWfTSJ3nqFQr0091CxVGg==}
     engines: {node: ^20.17.0 || >=22.9.0}
+
+  '@paralleldrive/cuid2@3.3.0':
+    resolution: {integrity: sha512-OqiFvSOF0dBSesELYY2CAMa4YINvlLpvKOz/rv6NeZEqiyttlHgv98Juwv4Ch+GrEV7IZ8jfI2VcEoYUjXXCjw==}
+    hasBin: true
 
   '@sigstore/bundle@4.0.0':
     resolution: {integrity: sha512-NwCl5Y0V6Di0NexvkTqdoVfmjTaQwoLM236r89KEojGmq/jMls8S+zb7yOwAPdXvbwfKDlP+lmXgAL4vKSQT+A==}
@@ -184,6 +208,9 @@ packages:
     resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
     engines: {node: 18 || 20 || >=22}
 
+  bignumber.js@9.3.1:
+    resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
+
   brace-expansion@5.0.6:
     resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
     engines: {node: 18 || 20 || >=22}
@@ -224,13 +251,24 @@ packages:
     resolution: {integrity: sha512-0lopQd/gi3excE3sgBrjuR3gJv6ZElk027i30pUgdjtvSJl/OoZ8B6L42GUBm6C3G8hD1EB5ir2gTYnINzWx4g==}
     engines: {node: '>=22'}
 
+  deepcopy-esm@2.1.2:
+    resolution: {integrity: sha512-iOrQr2AZDcKi5jenwiidK96Ivvn2uHqU1g25qmfs3MbgOUlXPNRbMtHDwTx+U83tD6z+PeYhZzvsPiOqVh20IA==}
+    engines: {node: '>=22'}
+
   diff@8.0.3:
     resolution: {integrity: sha512-qejHi7bcSD4hQAZE0tNAawRK1ZtafHDmMTMkrrIGgSLl7hTnQHmKCeB45xAcbfTqK2zowkM3j3bHt/4b/ARbYQ==}
+    engines: {node: '>=0.3.1'}
+
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
     engines: {node: '>=0.3.1'}
 
   env-paths@2.2.1:
     resolution: {integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==}
     engines: {node: '>=6'}
+
+  error-causes@3.0.2:
+    resolution: {integrity: sha512-i0B8zq1dHL6mM85FGoxaJnVtx6LD5nL2v0hlpGdntg5FOSyzQ46c9lmz5qx0xRS2+PWHGOHcYxGIBC5Le2dRMw==}
 
   expect-type@1.3.0:
     resolution: {integrity: sha512-knvyeauYhqjOYvQ66MznSMs83wmHrCycNEN6Ao+2AeYEfxUIkuiVxdEa1qlGEPK+We3n0THiDciYSsCcgW/DoA==}
@@ -429,14 +467,14 @@ packages:
     resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
     engines: {node: '>=12'}
 
-  prettier-plugin-multiline-arrays@4.1.4:
-    resolution: {integrity: sha512-33xcBKg7UC5rEKCkPn5LyB3f0mqK4wd+W5rzGO6gbps8jxAHnO/t95SuGqz6TR09ysXUjaKu1m5rknBVzlhKlw==}
+  prettier-plugin-multiline-arrays@4.1.9:
+    resolution: {integrity: sha512-rI4HdfJAFkXkvmh0LSE0ItPrRwJrR6TBaNWamrwOOnHzRLGoVuuuBhljU1pnsf9K/oU/ZsZpjQcuAle471yZ8A==}
     engines: {node: '>=20'}
     peerDependencies:
       prettier: '>=3.0.0 <4.0.0'
 
-  prettier@3.5.3:
-    resolution: {integrity: sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw==}
+  prettier@3.8.4:
+    resolution: {integrity: sha512-N2MylSdi48+5N/6S5j+maeHbUSIzzZ5uOcX5Hm4QpV8Dkb1HFjfAKTKX6yNPJQD9AhcT3ifHNB66tWTTJDi11Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -451,8 +489,8 @@ packages:
     resolution: {integrity: sha512-YgV6c/9aJ7RyNZDTPqLQ6SdqBocWHGUa5rU3hyEsHj2kg4/b0y0EMWp3dNNUEJQrw6BoywonNINEVyFvj97YXQ==}
     engines: {node: '>=22'}
 
-  pyright@1.1.409:
-    resolution: {integrity: sha512-13VFQyw4mJzshZxcxiYbNjo1hG/WHSRDj70Y3lbJEHqCkI2dvBAUTti8VV6Ezsr5gT93pFvC0e/jAQS4JdHarA==}
+  pyright@1.1.411:
+    resolution: {integrity: sha512-03S/vmS5lF1S/tVbKc2WNXCMq8JWCwta/qIYjj1jvqbQhoy+N3NgBzHTSmUlbYD6DJwqQ5XHf108QujoqeURvw==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -528,8 +566,16 @@ packages:
     resolution: {integrity: sha512-JnTrzGu+zPV3aXIUhnyWJj4z/wigMsdYajGLIYakqyOW1nPllzXEJee0QQbHj+CTIQtXGlAjuK0UY+2xTyjVAw==}
     engines: {node: '>=20'}
 
+  type-fest@5.7.0:
+    resolution: {integrity: sha512-1URUxUqfHFM1c+zfSPsa3gnkO7Aq21qyH75SIduNYz4SzY964rn1X2vCMQaHSHhktiw+0kPa2iyb6PUpXqB6Vg==}
+    engines: {node: '>=20'}
+
   typed-event-target@4.1.0:
     resolution: {integrity: sha512-fDFhZb7ofywLsVv8mYePD6ONfCpVHyM1t2dboEJx/XMsnflljnu3GQ5qH09hS1USuypGMR7wRbdWQPydgJ8nGQ==}
+    engines: {node: '>=22'}
+
+  typed-event-target@4.3.1:
+    resolution: {integrity: sha512-X9Wx2Xd58rcnWUTMlSJVREN7hhmf5jvcr0UY4qMRRUJo5WdI66COmLgLKHlMtWw2vo1dvxL2H8gBTTeRb6rP/w==}
     engines: {node: '>=22'}
 
   undici@6.24.1:
@@ -581,6 +627,14 @@ snapshots:
       expect-type: 1.3.0
       type-fest: 5.4.4
 
+  '@augment-vir/assert@31.73.2':
+    dependencies:
+      '@augment-vir/core': 31.73.2
+      '@date-vir/duration': 8.6.1
+      deep-eql: 5.0.2
+      expect-type: 1.3.0
+      type-fest: 5.7.0
+
   '@augment-vir/common@31.67.0':
     dependencies:
       '@augment-vir/assert': 31.67.0
@@ -592,6 +646,18 @@ snapshots:
       type-fest: 5.4.4
       typed-event-target: 4.1.0
 
+  '@augment-vir/common@31.73.2':
+    dependencies:
+      '@augment-vir/assert': 31.73.2
+      '@augment-vir/core': 31.73.2
+      '@date-vir/duration': 8.6.1
+      '@paralleldrive/cuid2': 3.3.0
+      ansi-styles: 6.2.3
+      deepcopy-esm: 2.1.2
+      json5: 2.2.3
+      type-fest: 5.7.0
+      typed-event-target: 4.3.1
+
   '@augment-vir/core@31.67.0':
     dependencies:
       '@date-vir/duration': 8.2.0
@@ -599,6 +665,14 @@ snapshots:
       diff: 8.0.3
       json5: 2.2.3
       type-fest: 5.4.4
+
+  '@augment-vir/core@31.73.2':
+    dependencies:
+      '@date-vir/duration': 8.6.1
+      browser-or-node: 3.0.0
+      diff: 9.0.0
+      json5: 2.2.3
+      type-fest: 5.7.0
 
   '@babel/helper-string-parser@7.27.1': {}
 
@@ -615,6 +689,13 @@ snapshots:
       '@types/luxon': 3.7.1
       luxon: 3.7.2
       type-fest: 5.4.4
+
+  '@date-vir/duration@8.6.1':
+    dependencies:
+      '@augment-vir/assert': 31.73.2
+      '@types/luxon': 3.7.1
+      luxon: 3.7.2
+      type-fest: 5.7.0
 
   '@gar/promise-retry@1.0.3': {}
 
@@ -661,6 +742,8 @@ snapshots:
       '@babel/types': 7.29.0
 
   '@nekosu/simple-parser@1.0.0': {}
+
+  '@noble/hashes@2.2.0': {}
 
   '@npmcli/agent@4.0.0':
     dependencies:
@@ -720,6 +803,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@paralleldrive/cuid2@3.3.0':
+    dependencies:
+      '@noble/hashes': 2.2.0
+      bignumber.js: 9.3.1
+      error-causes: 3.0.2
+
   '@sigstore/bundle@4.0.0':
     dependencies:
       '@sigstore/protobuf-specs': 0.5.0
@@ -769,6 +858,8 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
+  bignumber.js@9.3.1: {}
+
   brace-expansion@5.0.6:
     dependencies:
       balanced-match: 4.0.4
@@ -804,9 +895,15 @@ snapshots:
 
   deepcopy-esm@2.1.1: {}
 
+  deepcopy-esm@2.1.2: {}
+
   diff@8.0.3: {}
 
+  diff@9.0.0: {}
+
   env-paths@2.2.1: {}
+
+  error-causes@3.0.2: {}
 
   expect-type@1.3.0: {}
 
@@ -1031,14 +1128,14 @@ snapshots:
 
   picomatch@4.0.4: {}
 
-  prettier-plugin-multiline-arrays@4.1.4(prettier@3.5.3):
+  prettier-plugin-multiline-arrays@4.1.9(prettier@3.8.4):
     dependencies:
-      '@augment-vir/assert': 31.67.0
-      '@augment-vir/common': 31.67.0
-      prettier: 3.5.3
+      '@augment-vir/assert': 31.73.2
+      '@augment-vir/common': 31.73.2
+      prettier: 3.8.4
       proxy-vir: 2.0.2
 
-  prettier@3.5.3: {}
+  prettier@3.8.4: {}
 
   proc-log@6.1.0: {}
 
@@ -1053,7 +1150,7 @@ snapshots:
       '@augment-vir/assert': 31.67.0
       '@augment-vir/common': 31.67.0
 
-  pyright@1.1.409:
+  pyright@1.1.411:
     optionalDependencies:
       fsevents: 2.3.3
 
@@ -1136,11 +1233,21 @@ snapshots:
     dependencies:
       tagged-tag: 1.0.0
 
+  type-fest@5.7.0:
+    dependencies:
+      tagged-tag: 1.0.0
+
   typed-event-target@4.1.0:
     dependencies:
       '@augment-vir/assert': 31.67.0
       '@augment-vir/common': 31.67.0
       '@augment-vir/core': 31.67.0
+
+  typed-event-target@4.3.1:
+    dependencies:
+      '@augment-vir/assert': 31.73.2
+      '@augment-vir/common': 31.73.2
+      '@augment-vir/core': 31.73.2
 
   undici@6.24.1: {}
 

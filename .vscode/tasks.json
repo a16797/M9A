@@ -24,6 +24,12 @@
             "problemMatcher": []
         },
         {
+            "label": "sync schema",
+            "type": "shell",
+            "command": "pnpm sync:schema",
+            "problemMatcher": []
+        },
+        {
             "label": "lint",
             "type": "shell",
             "command": "pnpm lint",

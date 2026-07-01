@@ -3,7 +3,7 @@ name = "m9a"
 version = "0.0.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "maafw==v5.10.4",
+    "maafw==5.11.1",
     "loguru",
     "pillow",
     "pytz",

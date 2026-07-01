@@ -16,6 +16,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tools/validate-schema.mjs"
+      - "tools/sync-schema.mjs"
       - ".github/workflows/lint.yml"
   pull_request:
     branches: ["**"]
@@ -32,8 +33,13 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tools/validate-schema.mjs"
+      - "tools/sync-schema.mjs"
       - ".github/workflows/lint.yml"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -41,6 +47,7 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
@@ -70,11 +77,5 @@ jobs:
       - name: Schema shape check
         run: pnpm check:schema
 
-      - name: Ruff lint
-        run: pnpm lint:py
-
-      - name: Pyright type check
-        run: pnpm typecheck
-
-      - name: Pytest
-        run: pnpm test
+      - name: Python checks
+        run: pnpm check:py

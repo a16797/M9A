@@ -19,6 +19,7 @@ on:
       - "pyproject.toml"
       - "requirements*.txt"
       - "tools/validate-schema.mjs"
+      - "tools/sync-schema.mjs"
       - "**.py"
   pull_request:
     branches:
@@ -38,8 +39,13 @@ on:
       - "pyproject.toml"
       - "requirements*.txt"
       - "tools/validate-schema.mjs"
+      - "tools/sync-schema.mjs"
       - "**.py"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -47,6 +53,7 @@ permissions:
 jobs:
   resource:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
         with:

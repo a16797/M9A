@@ -1,0 +1,33 @@
+{
+    "schemaVersion": 1,
+    "source": {
+        "repository": "MaaXYZ/MaaFramework",
+        "ref": "main"
+    },
+    "files": [
+        {
+            "path": "deps/tools/interface.schema.json",
+            "upstreamPath": "tools/interface.schema.json",
+            "url": "https://raw.githubusercontent.com/MaaXYZ/MaaFramework/main/tools/interface.schema.json",
+            "sha256": "c4ec38e19cb2106f1c2dffe744cd64192973db0111ae20dc0f347e02c502ca24"
+        },
+        {
+            "path": "deps/tools/interface_import.schema.json",
+            "upstreamPath": "tools/interface_import.schema.json",
+            "url": "https://raw.githubusercontent.com/MaaXYZ/MaaFramework/main/tools/interface_import.schema.json",
+            "sha256": "b3022bb635c058d1e9e7f88e0c29a05864c966e6612510b5f905db8710be7c9e"
+        },
+        {
+            "path": "deps/tools/interface_config.schema.json",
+            "upstreamPath": "tools/interface_config.schema.json",
+            "url": "https://raw.githubusercontent.com/MaaXYZ/MaaFramework/main/tools/interface_config.schema.json",
+            "sha256": "78a772c083743e3a998da5b71434deb3c7ac183c9dde88553f320c22f7615b26"
+        },
+        {
+            "path": "deps/tools/pipeline.schema.json",
+            "upstreamPath": "tools/pipeline.schema.json",
+            "url": "https://raw.githubusercontent.com/MaaXYZ/MaaFramework/main/tools/pipeline.schema.json",
+            "sha256": "5d9be9d68383d85116c54158c1784473a01a46463fc3e9375c23c226e6024035"
+        }
+    ]
+}

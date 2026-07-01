@@ -35,6 +35,13 @@ pnpm check:maa
 pnpm check:py
 ```
 
+同步 MaaFramework 上游 JSON Schema 时运行：
+
+```bash
+pnpm sync:schema
+pnpm check
+```
+
 ## Pull Request
 
 - 一个 PR 只解决一个明确问题，避免混入无关格式化或重构。

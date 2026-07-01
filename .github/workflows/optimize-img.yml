@@ -13,6 +13,13 @@ on:
         type: string
         required: false
 
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   optimize-png:
     name: Optimize PNG Images
@@ -22,17 +29,18 @@ jobs:
           github.actor != 'github-actions[bot]' &&
           github.triggering_actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           show-progress: false
-          persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version-file: ".python-version"
 
       - name: Install dependencies
         run: |
@@ -63,13 +71,10 @@ jobs:
               commit_msg="chore: Auto Templates Optimization"
             fi
             git commit -m "$commit_msg" -m "Triggered by ${{github.sha}}" -m "[skip changelog]"
-            git pull origin $(git rev-parse --abbrev-ref HEAD) --unshallow --rebase
+            git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)"
             echo "have_commits=True" >> $GITHUB_OUTPUT
           fi
 
       - name: Push changes
         if: steps.commit_changes.outputs.have_commits == 'True' && github.repository_owner == 'MAA1999'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+        run: git push origin "HEAD:${GITHUB_REF_NAME}"

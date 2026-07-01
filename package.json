@@ -19,17 +19,20 @@
         "typecheck": "uv run --frozen pyright",
         "typecheck:py": "pnpm typecheck",
         "test": "uv run --frozen pytest",
+        "check:py:fast": "pnpm lint:py && pnpm typecheck:py",
         "check:py": "pnpm lint:py && pnpm typecheck:py && pnpm test",
         "check:schema": "node tools/validate-schema.mjs",
         "check:maa": "maa-tools check",
-        "check": "pnpm check:py && pnpm check:schema && pnpm check:maa",
+        "check": "pnpm format:check && pnpm check:py && pnpm check:schema && pnpm check:maa",
+        "ci": "pnpm check",
+        "sync:schema": "node tools/sync-schema.mjs",
         "install:py": "uv sync --frozen --group dev"
     },
     "devDependencies": {
         "@nekosu/maa-tools": "1.0.24",
-        "@nekosu/prettier-plugin-maafw-sort": "^1.0.5",
-        "prettier": "3.5.3",
-        "prettier-plugin-multiline-arrays": "4.1.4",
-        "pyright": "^1.1.400"
+        "@nekosu/prettier-plugin-maafw-sort": "1.0.5",
+        "prettier": "3.8.4",
+        "prettier-plugin-multiline-arrays": "4.1.9",
+        "pyright": "^1.1.411"
     }
 }
