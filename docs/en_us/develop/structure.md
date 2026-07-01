@@ -18,10 +18,10 @@ icon: hugeicons:structure-01
 |   |-- utils/                    # Utility functions
 |   |-- __init__.py               # Module initialization
 |   `-- main.py                   # Main entry point
-|-- assets/                       # Resource files directory
-|   |-- MaaCommonAssets/          # MAA common resources (submodule)
-|   |-- resource/                 # Project resource files
-|   `-- interface.json            # MaaFramework standardized project structure declaration
+|-- MaaCommonAssets/              # MAA common resources (submodule)
+|-- data/                         # Runtime data for activity, combat, and roguelike tasks
+|-- resource/                     # Pipeline, image, model, and other project resources
+|-- tasks/                        # MaaFramework task definitions
 |-- deps/                         # MaaFramework dependency libraries, where schemas are stored
 |-- docs/                         # Documentation directory
 |   |-- en_us/                    # English documentation
@@ -40,13 +40,21 @@ icon: hugeicons:structure-01
 |-- .gitattributes                # Git attributes configuration
 |-- .gitignore                    # Git ignore configuration
 |-- .gitmodules                   # Git submodules configuration
-|-- .pre-commit-config.yaml       # Pre-commit hooks configuration
-|-- .prettierrc                   # Code formatting configuration
+|-- .node-version                 # Node.js version configuration
+|-- .npmrc                        # Project-level pnpm/npm configuration
+|-- .prettierignore               # Prettier ignore rules
+|-- .prettierrc.mjs               # Code formatting configuration
+|-- .python-version               # Python version configuration
 |-- CONTACT                       # Contact information
+|-- interface.json                # MaaFramework standardized project structure declaration
 |-- LICENSE                       # License file
 |-- README.md                     # Chinese documentation
 |-- README_en.md                  # English documentation
-|-- package-lock.json             # npm dependency lock file
+|-- maatools.config.mts           # maa-tools check configuration
 |-- package.json                  # Node.js project configuration
+|-- pnpm-lock.yaml                # pnpm dependency lock file
+|-- pnpm-workspace.yaml           # pnpm workspace configuration
+|-- pyproject.toml                # Python project and tool configuration
+|-- uv.lock                       # uv dependency lock file
 `-- requirements.txt              # Python dependency list
 ```

@@ -40,15 +40,22 @@ icon: hugeicons:structure-01
 |-- .gitattributes                # Git 属性配置
 |-- .gitignore                    # Git 忽略文件配置
 |-- .gitmodules                   # Git 子模块配置
-|-- .pre-commit-config.yaml       # 预提交钩子配置
-|-- .prettierrc                   # 代码格式化配置
+|-- .node-version                 # Node.js 版本配置
+|-- .npmrc                        # pnpm/npm 项目级配置
+|-- .prettierignore               # Prettier 忽略规则
+|-- .prettierrc.mjs               # 代码格式化配置
+|-- .python-version               # Python 版本配置
 |-- CONTACT                       # 联系方式
 |-- interface.json                # MaaFramework 标准化项目结构声明
 |-- LICENSE                       # 许可证文件
 |-- logo.png                      # 项目图标
+|-- maatools.config.mts           # maa-tools 校验配置
 |-- README.md                     # 中文说明文档
 |-- README_en.md                  # 英文说明文档
-|-- package-lock.json             # npm 依赖锁定文件
 |-- package.json                  # Node.js 项目配置
+|-- pnpm-lock.yaml                # pnpm 依赖锁定文件
+|-- pnpm-workspace.yaml           # pnpm 工作区配置
+|-- pyproject.toml                # Python 项目与工具配置
+|-- uv.lock                       # uv 依赖锁定文件
 `-- requirements.txt              # Python 依赖列表
 ```

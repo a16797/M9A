@@ -39,15 +39,15 @@ def remove_auxiliary_data(input_file, output_file):
 
 def get_file_id(file_path: str):
     file_id = file_path.replace("\\", "/")
-    # assets\\resource\\global\\{SERVERNAME}\\resource\\template\\xxx.png-> {SERVERNAME}/xxx
+    # resource\\global\\{SERVERNAME}\\resource\\template\\xxx.png -> {SERVERNAME}/xxx
     m = re.search(r"global/(\w+)/resource/template/([^/]+)\.png", file_id)
     if m:
         return f"{m.group(1)}/{m.group(2)}"
-    # assets\\resource\\template\\xxx.png-> official/xxx
+    # resource\\template\\xxx.png -> official/xxx
     m = re.search(r"template/([^/]+)\.png", file_id)
     if m:
         return f"official/{m.group(1)}"
-    # assets\\resource\\PATH\\TO\\xxx.png-> resource/PATH/TO/xxx
+    # resource\\PATH\\TO\\xxx.png -> resource/PATH/TO/xxx
     m = re.search(r"resource/(.*)\.png", file_id)
     if m:
         return f"resource/{m.group(1)}"

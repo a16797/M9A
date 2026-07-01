@@ -5,3 +5,10 @@
 # Isolate binary files in case the auto-detection algorithm fails and
 # marks them as text files (which could brick them).
 *.{png,jpg,jpeg,gif,webp,woff,woff2} binary
+*.onnx binary
+
+interface.json linguist-language=JSON-with-Comments
+tasks/*.json linguist-language=JSON-with-Comments
+resource/**/default_pipeline.json linguist-language=JSON-with-Comments
+resource/**/pipeline/*.json linguist-language=JSON-with-Comments
+resource/**/pipeline/**/*.json linguist-language=JSON-with-Comments
