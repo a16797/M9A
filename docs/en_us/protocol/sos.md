@@ -11,7 +11,7 @@ icon: ri:game-fill
 
 ## Resource Location
 
-Related resources are stored under `assets/resource/data/sos`.
+Related resources are stored under `data/sos`.
 
 ## Field Description
 

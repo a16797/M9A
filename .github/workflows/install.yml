@@ -6,14 +6,28 @@ on:
       - "**"
     paths:
       - ".github/workflows/install.yml"
-      - "assets/**"
+      - "interface.json"
+      - "logo.png"
+      - "MaaCommonAssets/**"
+      - "resource/**"
+      - "data/**"
+      - "tasks/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
       - "**.py"
   pull_request:
     branches:
       - "**"
     paths:
       - ".github/workflows/install.yml"
-      - "assets/**"
+      - "interface.json"
+      - "logo.png"
+      - "MaaCommonAssets/**"
+      - "resource/**"
+      - "data/**"
+      - "tasks/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
       - "**.py"
   workflow_dispatch:
 
@@ -150,7 +164,7 @@ jobs:
           choco install imagemagick -y
 
           # 转换 PNG 到 ICO
-          magick convert assets/logo.png -define icon:auto-resize=256,128,64,48,32,24,16 m9a.ico
+          magick convert logo.png -define icon:auto-resize=256,128,64,48,32,24,16 m9a.ico
 
       - name: Modify Windows exe icons
         if: matrix.arch == 'x86_64'
@@ -192,25 +206,17 @@ jobs:
         run: |
           ./install/python/python.exe tools/ci/download_drop_core.py --os windows --arch ${{ matrix.arch }} || echo "drop_core download skipped"
 
+      - name: Install Python dependencies into embedded Python
+        shell: bash
+        run: |
+          ./install/python/python.exe -m pip install -U -r requirements.txt --no-warn-script-location --find-links install/deps --no-index
+
       - name: Install
         shell: bash
         run: |
           PLATFORM_TAG="win-${{ steps.platform.outputs.tag }}"
           ./install/python/python.exe ./tools/ci/install.py ${{ needs.meta.outputs.tag }} $PLATFORM_TAG
           cp -rpvn tools/registry/. install/
-
-      - name: Create CLI version
-        shell: bash
-        run: |
-          ./install/python/python.exe ./tools/ci/install_cli.py ${{ needs.meta.outputs.tag }}
-          cp -rpvn tools/registry/. install-cli/
-          cp -rpvn install/python/. install-cli/python/
-          rm -rf install-cli/deps 2>/dev/null || true
-          if [ -f "install-cli/MaaPiCli.exe" ]; then
-            mv -f install-cli/MaaPiCli.exe install-cli/M9A.exe
-          elif [ -f "install-cli/MaaPiCli" ]; then
-            mv -f install-cli/MaaPiCli install-cli/M9A
-          fi
 
       - name: Create MXU version
         shell: bash
@@ -277,11 +283,6 @@ jobs:
         with:
           name: M9A-win-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}-MFAA
           path: "install"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: M9A-win-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}-PiCLI
-          path: "install-cli"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -363,7 +364,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y imagemagick
 
           # 转换 PNG 到 ICO
-          convert assets/logo.png -define icon:auto-resize=256,128,64,48,32,24,16 m9a.ico
+          convert logo.png -define icon:auto-resize=256,128,64,48,32,24,16 m9a.ico
 
       - name: Download Python dependencies
         shell: bash
@@ -384,20 +385,6 @@ jobs:
           PLATFORM_TAG="linux-${{ steps.platform.outputs.tag }}"
           echo "Using Python executable: $PYTHON_EXECUTABLE for Linux"
           $PYTHON_EXECUTABLE ./tools/ci/install.py ${{ needs.meta.outputs.tag }} $PLATFORM_TAG
-
-      - name: Create CLI version
-        shell: bash
-        run: |
-          python ./tools/ci/install_cli.py ${{ needs.meta.outputs.tag }}
-          if [ -d "install/python" ]; then
-            cp -rpvn install/python/. install-cli/python/
-          fi
-          rm -rf install-cli/deps 2>/dev/null || true
-          if [ -f "install-cli/MaaPiCli" ]; then
-            mv -f install-cli/MaaPiCli install-cli/M9A
-          elif [ -f "install-cli/MaaPiCli.exe" ]; then
-            mv -f install-cli/MaaPiCli.exe install-cli/M9A.exe
-          fi
 
       - name: Create MXU version
         if: matrix.arch == 'x86_64'
@@ -468,11 +455,6 @@ jobs:
           path: "install"
 
       - uses: actions/upload-artifact@v4
-        with:
-          name: M9A-linux-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}-PiCLI
-          path: "install-cli"
-
-      - uses: actions/upload-artifact@v4
         if: matrix.arch == 'x86_64'
         with:
           name: M9A-linux-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}-MXU
@@ -484,9 +466,9 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: macos-15-intel  # Intel-based macOS runner
+            runner: macos-15-intel # Intel-based macOS runner
           - arch: aarch64
-            runner: macos-latest  # Apple Silicon macOS runner
+            runner: macos-latest # Apple Silicon macOS runner
       fail-fast: false
     runs-on: ${{ matrix.runner }}
     steps:
@@ -554,7 +536,7 @@ jobs:
           brew install imagemagick
 
           # 转换 PNG 到 ICO
-          magick convert assets/logo.png -define icon:auto-resize=256,128,64,48,32,24,16 m9a.ico
+          magick convert logo.png -define icon:auto-resize=256,128,64,48,32,24,16 m9a.ico
 
       - name: Setup Embed Python on macOS
         shell: bash
@@ -580,6 +562,11 @@ jobs:
         run: |
           ./install/python/bin/python3 tools/ci/download_drop_core.py --os darwin --arch ${{ matrix.arch }} || echo "drop_core download skipped"
 
+      - name: Install Python dependencies into embedded Python
+        shell: bash
+        run: |
+          ./install/python/bin/python3 -m pip install -U -r requirements.txt --no-warn-script-location --find-links install/deps --no-index
+
       - name: Install on macOS
         shell: bash
         run: |
@@ -587,18 +574,6 @@ jobs:
           PLATFORM_TAG="osx-${{ steps.platform.outputs.tag }}"
           echo "Using Python executable: $PYTHON_EXECUTABLE for macOS"
           $PYTHON_EXECUTABLE ./tools/ci/install.py ${{ needs.meta.outputs.tag }} $PLATFORM_TAG
-
-      - name: Create CLI version
-        shell: bash
-        run: |
-          ./install/python/bin/python3 ./tools/ci/install_cli.py ${{ needs.meta.outputs.tag }}
-          cp -rpvn install/python/. install-cli/python/
-          rm -rf install-cli/deps 2>/dev/null || true
-          if [ -f "install-cli/MaaPiCli" ]; then
-            mv -f install-cli/MaaPiCli install-cli/M9A
-          elif [ -f "install-cli/MaaPiCli.exe" ]; then
-            mv -f install-cli/MaaPiCli.exe install-cli/M9A.exe
-          fi
 
       - name: Create MXU version
         shell: bash
@@ -666,11 +641,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: M9A-macos-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}-PiCLI
-          path: "install-cli"
-
-      - uses: actions/upload-artifact@v4
-        with:
           name: M9A-macos-${{ matrix.arch }}-${{ needs.meta.outputs.tag }}-MXU
           path: "install-mxu"
 
@@ -707,21 +677,16 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: assets
+          path: release-assets
 
       - name: Process and package artifacts
         run: |
-          cd assets
+          cd release-assets
           for f in *; do
             if [[ $f == *"win"* ]]; then
               (cd "$f" && zip -r "../$f.zip" .)
             else
               echo "Processing Unix artifact: $f"
-
-              if [[ -f "$f/MaaPiCli" ]]; then
-                chmod +x "$f/MaaPiCli"
-                echo "Set execute permission for $f/MaaPiCli"
-              fi
 
               find "$f" -type f -name "MFAAvalonia*" -exec chmod +x {} \; 2>/dev/null || true
               echo "Set execute permission for all MFAAvalonia files"
@@ -754,11 +719,36 @@ jobs:
 
       - uses: softprops/action-gh-release@v2.2.2
         with:
-          files: assets/*
+          files: release-assets/*
           tag_name: ${{ needs.meta.outputs.tag }}
           body: ${{ needs.changelog.outputs.release_body }}
           draft: false
           prerelease: ${{ needs.meta.outputs.is_prerelease == 'true' }}
+
+      - name: Dispatch m9a-cli release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.CLI_RELEASE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "CLI_RELEASE_DISPATCH_TOKEN is not configured; skip m9a-cli dispatch."
+            exit 0
+          fi
+
+          gh api --method POST repos/MAA1999/m9a-cli/dispatches --input - <<EOF
+          {
+            "event_type": "m9a-release",
+            "client_payload": {
+              "tag": "${{ needs.meta.outputs.tag }}",
+              "source_repo": "${{ github.repository }}",
+              "source_ref": "${{ github.ref_name }}",
+              "source_sha": "${{ github.sha }}",
+              "source_run_id": "${{ github.run_id }}",
+              "maa_framework_version": "${{ env.MAA_FRAMEWORK_VERSION }}",
+              "is_prerelease": "${{ needs.meta.outputs.is_prerelease }}"
+            }
+          }
+          EOF
 
       - name: Trigger MirrorChyanUploading
         shell: bash

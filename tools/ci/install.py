@@ -13,9 +13,14 @@ from generate_manifest_cache import generate_manifest_cache
 from release_agent import configure_release_agent
 
 working_dir = Path(__file__).parent.parent.parent
+sys.path.append(str(working_dir))
+
+from tools.source_layout import discover_source_layout
+
 install_path = working_dir / Path("install")
 version = len(sys.argv) > 1 and sys.argv[1] or "v0.0.1"
 platform_tag = len(sys.argv) > 2 and sys.argv[2] or ""
+source_layout = discover_source_layout(working_dir)
 
 
 def install_deps(platform_tag: str):
@@ -58,12 +63,22 @@ def install_resource():
     configure_ocr_model()
 
     shutil.copytree(
-        working_dir / "assets" / "resource",
+        source_layout.resource_dir,
         install_path / "resource",
         dirs_exist_ok=True,
     )
+    shutil.copytree(
+        source_layout.data_dir,
+        install_path / "data",
+        dirs_exist_ok=True,
+    )
+    shutil.copytree(
+        source_layout.task_dir,
+        install_path / "tasks",
+        dirs_exist_ok=True,
+    )
     shutil.copy2(
-        working_dir / "assets" / "interface.json",
+        source_layout.interface_file,
         install_path,
     )
 
@@ -109,14 +124,12 @@ def install_agent():
 
 def install_manifest_cache():
     """生成初始 manifest 缓存，加速用户首次启动"""
-    data_dir = install_path / "resource" / "data"
+    data_dir = install_path / "data"
     success = generate_manifest_cache(data_dir)
     if success:
         print("Manifest cache generated successfully.")
     else:
-        print(
-            "Warning: Manifest cache generation failed, users will do full check on first run."
-        )
+        print("Warning: Manifest cache generation failed, users will do full check on first run.")
 
 
 if __name__ == "__main__":

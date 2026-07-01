@@ -152,8 +152,9 @@ print("示例代码")
     - develop/
       - pipeline.md
       - custom.md
-- assets/
-  - resource/
+- resource/
+- tasks/
+- data/
 :::
 ```
 

@@ -33,7 +33,7 @@ class DuringAct(CustomAction):
         resource = parse_params(argv.custom_action_param, "resource")["resource"]
         DuringAct.resource = resource
 
-        with open(f"resource/data/activity/{resource}.json", encoding="utf-8") as f:
+        with open(f"data/activity/{resource}.json", encoding="utf-8") as f:
             data = json.load(f)
 
         now = int(time.time() * 1000)
@@ -103,7 +103,7 @@ class CombatActivityOverride(CustomAction):
             return CustomAction.RunResult(success=True)
 
         with open(
-            f"resource/data/activity/{DuringAct.resource}.json", encoding="utf-8"
+            f"data/activity/{DuringAct.resource}.json", encoding="utf-8"
         ) as f:
             data = json.load(f)
 
@@ -149,7 +149,7 @@ class DuringAnecdote(CustomAction):
 
         resource = parse_params(argv.custom_action_param, "resource")["resource"]
 
-        with open(f"resource/data/activity/{resource}.json", encoding="utf-8") as f:
+        with open(f"data/activity/{resource}.json", encoding="utf-8") as f:
             data = json.load(f)
 
         now = int(time.time() * 1000)
@@ -199,7 +199,7 @@ class DuringRe_release(CustomAction):
 
         resource = parse_params(argv.custom_action_param, "resource")["resource"]
 
-        with open(f"resource/data/activity/{resource}.json", encoding="utf-8") as f:
+        with open(f"data/activity/{resource}.json", encoding="utf-8") as f:
             data = json.load(f)
 
         now = int(time.time() * 1000)

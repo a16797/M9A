@@ -1,8 +1,11 @@
-import os
 import json
+import os
+from pathlib import Path
 
 from getContent import getContent
 from analyzeContent import analyzeContent
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
 
 
 def save_activity_data(resource, data):
@@ -18,7 +21,7 @@ def save_activity_data(resource, data):
     """
 
     # 构建文件路径
-    file_path = f"assets/resource/data/activity/{resource}.json"
+    file_path = ROOT_DIR / "data" / "activity" / f"{resource}.json"
 
     # 提取当前要保存的版本号 (只取第一个，假设每次只处理一个版本)
     version_id = next(iter(data.keys()), None)

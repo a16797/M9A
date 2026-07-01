@@ -16,7 +16,7 @@ from utils.params import parse_params
 from .record_id import RecordID
 
 CONFIG_PATH = Path("config/m9a_data.json")
-DATA_DIR = Path("resource/data/redeem_code")
+DATA_DIR = Path("data/redeem_code")
 
 RESOURCE_TIMEZONES = {
     "cn": "Asia/Shanghai",

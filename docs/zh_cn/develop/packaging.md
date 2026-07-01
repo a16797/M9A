@@ -30,12 +30,14 @@ project/
 │   ├── main.py                  # AgentServer 薄入口
 │   ├── utils/                   # 工具模块（日志、配置、热更新等）
 │   └── custom/                  # 自定义业务逻辑
-├── assets/                      # 资源文件（图片、配置等）
+├── resource/                    # Pipeline、图片、模型等项目资源
+├── tasks/                       # MaaFramework 任务定义
+├── data/                        # 活动、战斗、肉鸽等运行数据
 ├── tools/ci/
 │   ├── setup_embed_python.py    # 设置嵌入式 Python
 │   ├── download_deps.py         # 下载 Python 依赖
-│   ├── install.py               # 打包脚本（Full 版本）
-│   └── install_cli.py           # 打包脚本（Lite 版本）
+│   ├── install.py               # 打包脚本（MFAA 版本）
+│   └── install_mxu.py           # 打包脚本（MXU 版本）
 └── requirements.txt             # Python 依赖列表
 ```
 
@@ -55,7 +57,9 @@ install/                     # 打包产物目录（CI/CD 生成）
 │   ├── package1.whl
 │   ├── package2.whl
 │   └── ...
-├── resource/                # Assets下的 resource 文件夹
+├── resource/                # Pipeline、图片、模型等项目资源
+├── tasks/                   # MaaFramework 任务定义
+├── data/                    # 活动、战斗、肉鸽等运行数据
 └── interface.json           # 版本信息
 ```
 
@@ -210,20 +214,25 @@ steps:
   - name: Download Python dependencies
     run: ./install/python/python.exe tools/ci/download_deps.py --deps-dir install/deps
 
-  # 4. 执行打包
+  # 4. 将 Python 依赖安装进内置 Python
+  - name: Install Python dependencies into embedded Python
+    run: ./install/python/python.exe -m pip install -U -r requirements.txt --find-links install/deps --no-index
+
+  # 5. 执行打包
   - name: Install
     run: ./install/python/python.exe ./tools/ci/install.py ${{ needs.meta.outputs.tag }} $PLATFORM_TAG
 
-  # 5. 创建 CLI 版本
-  - name: Create CLI version
-    run: ./install/python/python.exe ./tools/ci/install_cli.py ${{ needs.meta.outputs.tag }}
+  # 6. 创建 MXU 版本
+  - name: Create MXU version
+    run: ./install/python/python.exe ./tools/ci/install_mxu.py ${{ needs.meta.outputs.tag }}
 ```
 
 **关键点：**
 
 - 使用嵌入式 Python（`install/python/python.exe`）
 - 依赖下载到 `install/deps/` 目录
-- 生成两个版本：Full（包含 GUI）和 Lite（仅 CLI）
+- 生成 MFAA 和 MXU 两种图形界面版本
+- CLI 版本由 `MAA1999/m9a-cli` 独立仓库接收 dispatch 后生成
 
 #### Linux 平台
 
@@ -241,9 +250,9 @@ steps:
   - name: Install on Linux
     run: python ./tools/ci/install.py ${{ needs.meta.outputs.tag }} $PLATFORM_TAG
 
-  # 4. 创建 CLI 版本
-  - name: Create CLI version
-    run: python ./tools/ci/install_cli.py ${{ needs.meta.outputs.tag }}
+  # 4. 创建 MXU 版本（仅 x86_64）
+  - name: Create MXU version
+    run: python ./tools/ci/install_mxu.py ${{ needs.meta.outputs.tag }}
 ```
 
 **关键点：**
@@ -281,19 +290,20 @@ steps:
 
 ### 打包产物
 
-每个平台会生成两个版本：
+M9A 本仓库生成图形界面包：
 
-1. **Full 版本**（`M9A-{platform}-{arch}-{version}-Full`）
+1. **MFAA 版本**（`M9A-{platform}-{arch}-{version}-MFAA`）
    - 包含完整的 GUI 界面（MFAAvalonia）
    - 包含 Python Agent 和所有依赖
    - 包含 MaaFramework 运行时
    - 适合普通用户使用
 
-2. **Lite 版本**（`M9A-{platform}-{arch}-{version}-Lite`）
-   - 仅包含命令行界面（MaaPiCli）
+2. **MXU 版本**（`M9A-{platform}-{arch}-{version}-MXU`）
+   - 包含 MXU 图形界面
    - 包含 Python Agent 和所有依赖
-   - 不包含 GUI 相关文件
-   - 适合服务器部署或自动化脚本
+   - 包含 MaaFramework 运行时
+
+CLI 包不在 M9A 仓库生成。M9A 发版后会向 `MAA1999/m9a-cli` 发送 `repository_dispatch`，由该仓库同步生成命令行 release。
 
 ## Agent 使用方式
 
@@ -366,7 +376,7 @@ your-project/
 │   ├── setup_embed_python.py       # 直接复制
 │   ├── download_deps.py            # 直接复制
 │   ├── install.py                  # 根据需求修改
-│   └── install_cli.py              # 根据需求修改
+│   └── install_mxu.py              # 根据需求修改
 └── requirements.txt                # 根据需求修改
 ```
 
@@ -429,7 +439,7 @@ your-project/
 
 3. **打包步骤**
    - 保留 Python 环境设置和依赖下载步骤
-   - 修改 `install.py` 和 `install_cli.py` 的调用参数
+   - 修改 `install.py` 和 `install_mxu.py` 的调用参数
    - 根据需要添加或删除其他步骤（如图标转换、文件复制等）
 
 ### 3. 注意事项

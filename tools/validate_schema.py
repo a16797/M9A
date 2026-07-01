@@ -4,8 +4,15 @@ import sys
 import tempfile
 import argparse
 from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
 from jsonschema import Draft7Validator, Draft202012Validator
 from jsonschema.exceptions import ValidationError
+
+from tools.source_layout import discover_source_layout
 
 try:
     from referencing import Registry, Resource
@@ -214,44 +221,56 @@ def main():
     parser.add_argument(
         "--schema-dir",
         type=str,
-        default="tools/schema",
-        help="Directory containing schema files (default: tools/schema)",
+        default=None,
+        help="Directory containing schema files (default: auto-detect)",
     )
     parser.add_argument(
         "--resource-dirs",
         type=str,
         nargs="+",
-        default=["assets/resource"],
-        help="Directories containing resource files to validate (default: assets/resource)",
+        default=None,
+        help="Directories containing resource files to validate (default: auto-detect)",
     )
     parser.add_argument(
         "--exclude-dirs",
         type=str,
         nargs="*",
-        default=[],
-        help="Directories to exclude from pipeline validation (default: none)",
+        default=None,
+        help="Directories to exclude from pipeline validation (default: auto-detect)",
     )
     parser.add_argument(
         "--interface-files",
         type=str,
         nargs="+",
-        default=["assets/interface.json"],
-        help="Path to interface.json files (default: assets/interface.json)",
+        default=None,
+        help="Path to interface.json files (default: auto-detect)",
     )
     parser.add_argument(
         "--task-dirs",
         type=str,
         nargs="*",
-        default=[],
-        help="Directories containing task files to validate against interface_import.schema.json (default: none)",
+        default=None,
+        help="Directories containing task files to validate against interface_import.schema.json (default: auto-detect)",
     )
 
     args = parser.parse_args()
+    source_layout = discover_source_layout(ROOT_DIR)
+    schema_dir_arg = args.schema_dir or str(source_layout.schema_dir)
+    resource_dirs = args.resource_dirs or [str(source_layout.resource_dir)]
+    exclude_dirs = (
+        args.exclude_dirs
+        if args.exclude_dirs is not None
+        else [str(path) for path in source_layout.pipeline_exclude_dirs]
+    )
+    interface_files = args.interface_files or [str(source_layout.interface_file)]
+    task_dirs = (
+        args.task_dirs if args.task_dirs is not None else [str(source_layout.task_dir)]
+    )
 
     all_valid = True
 
     # 加载所有 schema 文件
-    schema_dir = Path(args.schema_dir).resolve()
+    schema_dir = Path(schema_dir_arg).resolve()
     schema_store = {}
 
     print("Loading schemas...")
@@ -278,7 +297,7 @@ def main():
     pipeline_validator = create_validator(pipeline_schema, schema_store)
 
     # 准备排除目录列表
-    exclude_paths = [Path(d).resolve() for d in args.exclude_dirs]
+    exclude_paths = [Path(d).resolve() for d in exclude_dirs]
 
     def is_excluded(file_path):
         """检查文件是否在排除目录中"""
@@ -293,7 +312,7 @@ def main():
 
     print("Validating pipeline resources...")
     # 验证 pipeline 资源文件
-    for resource_dir in args.resource_dirs:
+    for resource_dir in resource_dirs:
         resource_path = Path(resource_dir)
         if not resource_path.exists():
             print(
@@ -323,7 +342,7 @@ def main():
 
         interface_validator = create_validator(interface_schema, schema_store)
 
-        for interface_file in args.interface_files:
+        for interface_file in interface_files:
             interface_path = Path(interface_file)
             if interface_path.exists():
                 if not validate_file(interface_path, interface_validator):
@@ -334,7 +353,7 @@ def main():
                 )
 
     # 验证 task 文件
-    if args.task_dirs:
+    if task_dirs:
         print("\nValidating task files...")
         task_schema_path = schema_dir / "interface_import.schema.json"
         if task_schema_path.exists():
@@ -344,7 +363,7 @@ def main():
 
             task_validator = create_validator(task_schema, schema_store)
 
-            for task_dir in args.task_dirs:
+            for task_dir in task_dirs:
                 task_path = Path(task_dir)
                 if not task_path.exists():
                     print(

@@ -6,14 +6,24 @@ on:
       - "**"
     paths:
       - ".github/workflows/check.yml"
-      - "assets/**"
+      - "interface.json"
+      - "resource/**"
+      - "data/**"
+      - "tasks/**"
+      - "pyproject.toml"
+      - "requirements*.txt"
       - "**.py"
   pull_request:
     branches:
       - "**"
     paths:
       - ".github/workflows/check.yml"
-      - "assets/**"
+      - "interface.json"
+      - "resource/**"
+      - "data/**"
+      - "tasks/**"
+      - "pyproject.toml"
+      - "requirements*.txt"
       - "**.py"
   workflow_dispatch:
 
@@ -48,4 +58,4 @@ jobs:
       - name: Validate JSON Schema
         run: |
           uv sync --frozen --group dev
-          uv run --frozen python tools/validate_schema.py --schema-dir deps/tools --resource-dirs assets/resource --exclude-dirs assets/resource/announcement assets/resource/data assets/resource/tasks --interface-files assets/interface.json --task-dirs assets/resource/tasks
+          uv run --frozen python tools/validate_schema.py

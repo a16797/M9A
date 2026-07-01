@@ -78,9 +78,7 @@ def ensure_venv_and_relaunch_if_needed(current_file_path: str):
             logger.error("正在退出")
             sys.exit(1)
         except FileNotFoundError:
-            logger.error(
-                f"命令 '{sys.executable} -m venv' 未找到。请确保 'venv' 模块可用。"
-            )
+            logger.error(f"命令 '{sys.executable} -m venv' 未找到。请确保 'venv' 模块可用。")
             logger.error("无法在没有虚拟环境的情况下继续。正在退出。")
             sys.exit(1)
 
@@ -105,8 +103,7 @@ def ensure_venv_and_relaunch_if_needed(current_file_path: str):
 
     try:
         # Use the absolute bootstrap path when relaunching inside the venv.
-        # sys.argv[0] may be relative to assets/ and resolve differently after
-        # cwd changes.
+        # cwd may be changed by MaaFramework or debugging tools before relaunch.
         script_abs = current_file_path
         args = sys.argv[1:]
         cmd = [str(python_in_venv), str(script_abs)] + args
@@ -160,24 +157,17 @@ def read_config(config_name: str, default_config: dict) -> dict:
 def read_interface_version(interface_file_name="./interface.json") -> str:
     paths = get_runtime_paths()
     interface_path = paths.project_root / interface_file_name
-    assets_interface_path = paths.assets_dir / interface_file_name
 
-    target_path = None
-    if interface_path.exists():
-        target_path = interface_path
-    elif assets_interface_path.exists():
-        return "DEBUG"
-
-    if target_path is None:
+    if not interface_path.exists():
         logger.warning("未找到interface.json")
         return "unknown"
 
     try:
-        with open(target_path, encoding="utf-8") as f:
+        with open(interface_path, encoding="utf-8") as f:
             interface_data = json.load(f)
             return interface_data.get("version", "unknown")
     except Exception:
-        logger.exception(f"读取interface.json版本失败，文件路径：{target_path}")
+        logger.exception(f"读取interface.json版本失败，文件路径：{interface_path}")
         return "unknown"
 
 
@@ -253,12 +243,10 @@ def _runtime_requirements_installed(req_path: Path) -> bool:
             missing.append(package_name)
             continue
 
-        if expected_version and _normalize_version(
-            installed_version
-        ) != _normalize_version(expected_version):
-            mismatched.append(
-                f"{package_name}=={installed_version} (need {expected_version})"
-            )
+        if expected_version and _normalize_version(installed_version) != _normalize_version(
+            expected_version
+        ):
+            mismatched.append(f"{package_name}=={installed_version} (need {expected_version})")
 
     if missing:
         logger.debug(f"缺少运行时依赖: {', '.join(missing)}")
@@ -359,9 +347,7 @@ def _run_pip_command(cmd_args: list, operation_name: str) -> bool:
         return False
 
 
-def install_requirements(
-    req_file="requirements.txt", pip_config: dict | None = None
-) -> bool:
+def install_requirements(req_file="requirements.txt", pip_config: dict | None = None) -> bool:
     req_path = get_runtime_paths().project_root / req_file  # 确保相对于项目根目录
     if not req_path.exists():
         logger.error(f"{req_file} 文件不存在于 {req_path.resolve()}")
@@ -471,10 +457,35 @@ def check_and_install_dependencies():
         logger.info("Pip 依赖安装已禁用，跳过依赖安装")
 
 
+def _is_ci_preinstalled_release_python() -> bool:
+    if sys.platform.startswith("win"):
+        expected_python = get_runtime_paths().project_root / "python" / "python.exe"
+    elif sys.platform == "darwin":
+        expected_python = get_runtime_paths().project_root / "python" / "bin" / "python3"
+    else:
+        return False
+
+    try:
+        return Path(sys.executable).resolve() == expected_python.resolve()
+    except OSError:
+        return False
+
+
+def should_install_dependencies_at_runtime(is_dev_mode: bool) -> bool:
+    if is_dev_mode:
+        return True
+
+    if _is_ci_preinstalled_release_python():
+        logger.info("发布包内置 Python 依赖已由 CI 安装，跳过运行时 pip 安装")
+        return False
+
+    return True
+
+
 def switch_to_dev_work_root(project_root_dir: str | Path):
     paths = configure_runtime_paths(
         project_root=project_root_dir,
-        work_root=get_runtime_paths().assets_dir,
+        work_root=project_root_dir,
     )
     os.chdir(paths.work_root)
     logger.debug(f"set cwd: {os.getcwd()}")
@@ -533,7 +544,8 @@ def prepare_and_run_main(current_file_path: str | Path) -> None:
     if sys.platform.startswith("linux") or is_dev_mode:
         ensure_venv_and_relaunch_if_needed(str(current_file))
 
-    check_and_install_dependencies()
+    if should_install_dependencies_at_runtime(is_dev_mode):
+        check_and_install_dependencies()
 
     if is_dev_mode:
         paths = switch_to_dev_work_root(project_root_dir)

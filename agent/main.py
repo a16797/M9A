@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from contextlib import suppress
@@ -26,18 +27,22 @@ def _is_dev_mode(project_root: Path) -> bool:
     env_dev_mode = os.getenv(ENV_DEV_MODE)
     if env_dev_mode is not None:
         return env_dev_mode == "1"
-    return (
-        not (project_root / "interface.json").exists()
-        and (project_root / "assets" / "interface.json").exists()
-    )
+
+    interface_file = project_root / "interface.json"
+    if interface_file.exists():
+        try:
+            with interface_file.open(encoding="utf-8") as f:
+                return json.load(f).get("version") == "DEBUG"
+        except Exception:
+            return False
+
+    return False
 
 
 def _work_root(project_root: Path, is_dev_mode: bool) -> Path:
     env_work_root = os.getenv(ENV_WORK_ROOT)
     if env_work_root:
         return Path(env_work_root).resolve()
-    if is_dev_mode:
-        return (project_root / "assets").resolve()
     return project_root.resolve()
 
 

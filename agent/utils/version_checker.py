@@ -66,14 +66,9 @@ def check_resource_version(interface_file_path: str = "./interface.json") -> dic
             interface_path = paths.work_root / interface_path
 
         if not interface_path.exists():
-            # 尝试从assets目录读取
-            assets_path = paths.assets_interface_file
-            if assets_path.exists():
-                interface_path = assets_path
-            else:
-                result["error"] = "未找到interface.json文件"
-                logger.warning(result["error"])
-                return result
+            result["error"] = "未找到interface.json文件"
+            logger.warning(result["error"])
+            return result
 
         with open(interface_path, encoding="utf-8") as f:
             interface_data = json.load(f)

@@ -53,16 +53,16 @@ class SOSSelectNode(CustomAction):
         reco_detail = argv.reco_detail.raw_detail["best"]["detail"]
 
         try:
-            with open("resource/data/sos/nodes.json", encoding="utf-8") as f:
+            with open("data/sos/nodes.json", encoding="utf-8") as f:
                 nodes = json.load(f)
         except FileNotFoundError:
-            print("错误：文件 resource/data/sos/nodes.json 未找到。")
+            print("错误：文件 data/sos/nodes.json 未找到。")
             return CustomAction.RunResult(success=False)
         except json.JSONDecodeError as e:
             print(f"错误：JSON 解析失败 - {e}")
             return CustomAction.RunResult(success=False)
         except PermissionError:
-            print("错误：没有权限读取文件 resource/data/sos/nodes.json。")
+            print("错误：没有权限读取文件 data/sos/nodes.json。")
             return CustomAction.RunResult(success=False)
         except Exception as e:
             print(f"读取 JSON 文件时发生未知错误：{e}")
@@ -255,7 +255,7 @@ class SOSNodeProcess(CustomAction):
         argv: CustomAction.RunArg,
     ) -> CustomAction.RunResult:
 
-        with open("resource/data/sos/nodes.json", encoding="utf-8") as f:
+        with open("data/sos/nodes.json", encoding="utf-8") as f:
             nodes = json.load(f)
 
         node_type, event_name = (
@@ -641,7 +641,7 @@ class SOSShoppingList(CustomAction):
         SOSShoppingList.shopping_items = {}
 
         # 加载物品数据用于纠错
-        with open("resource/data/sos/items.json", encoding="utf-8") as f:
+        with open("data/sos/items.json", encoding="utf-8") as f:
             items_data = json.load(f)
 
         # 构建所有有效物品名的集合（造物+谐波）
@@ -898,7 +898,7 @@ class SOSBuyItems(CustomAction):
 
         # 加载物品优先级配置（可选）
         try:
-            with open("resource/data/sos/items.json", encoding="utf-8") as f:
+            with open("data/sos/items.json", encoding="utf-8") as f:
                 _items_data = json.load(f)
             # 可以在这里定义优先级逻辑，暂时按价格升序排列（买便宜的，数量更多）
         except Exception:

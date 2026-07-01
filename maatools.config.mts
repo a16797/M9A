@@ -11,7 +11,7 @@ declare global {
 const config: FullConfig = {
   cwd: import.meta.dirname,
   maaVersion: 'latest',
-  interfacePath: 'assets/interface.json',
+  interfacePath: 'interface.json',
   parser: {
     customReco: (name, param, utils) => {
       const result: PropSelectorResult[] = []

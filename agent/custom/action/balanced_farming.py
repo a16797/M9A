@@ -11,7 +11,7 @@ from utils.maa_types import best_box, ocr_text
 
 @AgentServer.custom_action("BalancedFarmingAnalyze")
 class BalancedFarmingAnalyze(CustomAction):
-    _DATA_PATH = "resource/data/combat/balanced_farming.json"
+    _DATA_PATH = "data/combat/balanced_farming.json"
     # 仓库列表最多翻页次数，防止滑动判断异常时死循环
     _MAX_SCROLL_PAGES = 5
     # 数量文字相对图标 box 的偏移：(dx, dy, dw, dh)，dy 基于图标底边；

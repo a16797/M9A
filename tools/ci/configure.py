@@ -1,14 +1,15 @@
+import shutil
 from pathlib import Path
 
-import shutil
-
-assets_dir = Path(__file__).parent.parent.parent / "assets"
+root_dir = Path(__file__).resolve().parents[2]
+common_assets_dir = root_dir / "MaaCommonAssets"
+resource_dir = root_dir / "resource"
 
 
 def configure_ocr_model():
     shutil.copytree(
-        assets_dir / "MaaCommonAssets" / "OCR" / "ppocr_v4" / "zh_cn",
-        assets_dir / "resource" / "base" / "model" / "ocr",
+        common_assets_dir / "OCR" / "ppocr_v4" / "zh_cn",
+        resource_dir / "base" / "model" / "ocr",
         dirs_exist_ok=True,
     )
 
