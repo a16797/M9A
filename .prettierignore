@@ -15,5 +15,10 @@ package-lock.json
 # 本地运行产物
 .venv/
 .uv-cache/
+.agents/
+.claude/
+.codex/
+config/
 debug/
+python/
 tmp/

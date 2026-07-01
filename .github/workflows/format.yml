@@ -5,31 +5,34 @@ on:
   schedule:
     - cron: "0 22 * * *" # UTC+8 06:00
 
+permissions:
+  contents: write
+
 jobs:
   format:
     if: ${{ github.repository_owner == 'MAA1999' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
           submodules: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.9.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: ".node-version"
           cache: "pnpm"
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
 
@@ -48,13 +51,16 @@ jobs:
         run: pnpm format:all
 
       - name: Commit and push changes
-        uses: actions-js/push@master
-        with:
-          rebase: true
-          branch: ${{ github.ref }}
-          message: "styles: auto format code
+        shell: bash
+        run: |
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No formatting changes."
+            exit 0
+          fi
 
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            [skip changelog]"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "styles: auto format code" -m "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" -m "[skip changelog]"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"

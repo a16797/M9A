@@ -4,43 +4,46 @@
     "json.schemas": [
         {
             "fileMatch": [
-                "/assets/resource/**/*.json",
+                "/resource/**/*.json",
                 "/install/resource/**/*.json",
-                "!/assets/resource/data/**/**.json",
-                "!/install/resource/data/**/**.json",
-                "!/assets/resource/tasks/**/**.json",
-                "!/install/resource/tasks/**/**.json"
+                "!/resource/announcement/**",
+                "!/install/resource/announcement/**"
             ],
-            "url": "/deps/tools/pipeline.schema.json"
+            "url": "./deps/tools/pipeline.schema.json"
         },
         {
             "fileMatch": [
-                "/assets/interface.json",
+                "/interface.json",
                 "/install/interface.json"
             ],
-            "url": "/deps/tools/interface.schema.json"
+            "url": "./deps/tools/interface.schema.json"
         },
         {
             "fileMatch": [
-                "/assets/resource/tasks/**/*.json",
-                "/install/resource/tasks/**/*.json"
+                "/tasks/**/*.json",
+                "/install/tasks/**/*.json"
             ],
-            "url": "/deps/tools/interface_import.schema.json"
+            "url": "./deps/tools/interface_import.schema.json"
         },
         {
             "fileMatch": [
                 "/install/config/maa_pi_config.json"
             ],
-            "url": "/deps/tools/interface_config.schema.json"
+            "url": "./deps/tools/interface_config.schema.json"
         }
     ],
     "files.exclude": {
         "__pycache__": true
     },
     "files.associations": {
-        "**/assets/**/*.json": "jsonc"
+        "*.json": "jsonc",
+        "*.jsonc": "jsonc"
     },
-    "[json][jsonc]": {
+    "[json]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
@@ -54,5 +57,6 @@
     },
     "markdownlint.config": {
         "MD028": false
-    }
+    },
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv"
 }

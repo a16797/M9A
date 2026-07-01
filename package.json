@@ -9,16 +9,20 @@
         "node": ">=24"
     },
     "scripts": {
+        "format": "pnpm format:all",
+        "format:check": "prettier --check \"**/*.json\"",
         "format:json": "prettier --write \"**/*.json\"",
         "format:py": "uv run --frozen black .",
-        "format:all": "prettier --write \"**/*.json\" && uv run --frozen black .",
+        "format:all": "pnpm format:json && pnpm format:py",
+        "lint": "pnpm lint:py",
         "lint:py": "uv run --frozen ruff check .",
         "typecheck": "uv run --frozen pyright",
+        "typecheck:py": "pnpm typecheck",
         "test": "uv run --frozen pytest",
-        "check:py": "uv run --frozen ruff check . && uv run --frozen pyright && uv run --frozen pytest",
+        "check:py": "pnpm lint:py && pnpm typecheck:py && pnpm test",
         "check:schema": "node tools/validate-schema.mjs",
         "check:maa": "maa-tools check",
-        "check": "uv run --frozen ruff check . && uv run --frozen pyright && uv run --frozen pytest && node tools/validate-schema.mjs && maa-tools check",
+        "check": "pnpm check:py && pnpm check:schema && pnpm check:maa",
         "install:py": "uv sync --frozen --group dev"
     },
     "devDependencies": {
