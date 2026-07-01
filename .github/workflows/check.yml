@@ -6,10 +6,14 @@ on:
       - "**"
     paths:
       - ".github/workflows/check.yml"
+      - ".node-version"
+      - ".npmrc"
       - "interface.json"
       - "resource/**"
       - "data/**"
       - "tasks/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - "pyproject.toml"
       - "requirements*.txt"
       - "**.py"
@@ -18,10 +22,14 @@ on:
       - "**"
     paths:
       - ".github/workflows/check.yml"
+      - ".node-version"
+      - ".npmrc"
       - "interface.json"
       - "resource/**"
       - "data/**"
       - "tasks/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - "pyproject.toml"
       - "requirements*.txt"
       - "**.py"
@@ -35,12 +43,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
       - name: Use Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: ".node-version"
+          cache: "pnpm"
 
       - name: Run maa-checker
         run: |
-          npm ci
-          npx @nekosu/maa-tools check
+          pnpm install --frozen-lockfile --trust-lockfile
+          pnpm check:maa

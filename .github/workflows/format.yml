@@ -20,12 +20,12 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11.9.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: ".node-version"
           cache: "pnpm"
 
       - name: Setup Python
@@ -39,7 +39,7 @@ jobs:
           enable-cache: true
 
       - name: Install Node dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --trust-lockfile
 
       - name: Install Python dependencies
         run: pnpm install:py
