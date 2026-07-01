@@ -1,7 +1,7 @@
 [project]
 name = "m9a"
 version = "0.0.0"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "maafw==v5.10.4",
     "loguru",
@@ -36,7 +36,7 @@ extend-exclude = '''
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 exclude = [".venv", ".venv-linux", "tools/"]
 
 [tool.ruff.lint]
@@ -55,7 +55,7 @@ ignore = [
 "agent/utils/__init__.py" = ["F403", "F405", "F401"]
 
 [tool.pyright]
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 typeCheckingMode = "strict"
 reportMissingTypeStubs = "none"
 reportUnknownMemberType = "none"

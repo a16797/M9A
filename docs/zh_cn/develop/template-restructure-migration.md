@@ -40,7 +40,7 @@ M9A/
 ## 迁移决策
 
 1. Python Agent 入口对齐模板，但保留 M9A 自有 bootstrap 流程：热更新、manifest cache、依赖 marker、本地 wheels 优先、日志和 PI 环境快照继续保留。
-2. Windows/macOS 发布包在 CI 中把 `requirements.txt` 安装进内置 Python；用户启动发布包时检测到内置 Python 后跳过运行时 pip 安装。
+2. 项目目标 Python 版本切到 3.13 系列；本地 `.python-version` 与 Windows/macOS 发布包内置 Python 固定为 3.13.14。CI 中把 `requirements.txt` 安装进内置 Python；用户启动发布包时检测到内置 Python 后跳过运行时 pip 安装。
 3. `pyproject.toml` 将 `typeCheckingMode` 切到 `strict`，并显式关闭当前历史代码和 maafw 第三方库缺存根造成的大面积噪声。后续可按规则逐项收紧。
 4. M9A 仓库只负责 MFAA 和 MXU 包。CLI 包迁到 `MAA1999/m9a-cli` 独立仓库生成；M9A 发版后通过 `repository_dispatch` 通知该仓库同步打包发版。
 5. `tools/source_layout.py` 只接受模板根布局，不再 fallback 到旧 `assets/` 布局，避免迁移错误被兼容层吞掉。
@@ -53,14 +53,14 @@ M9A 本仓库：
 - Windows/macOS job 在 `Download drop_core module` 后安装 Python 依赖到 `install/python`。
 - MFAA 包由 `tools/ci/install.py` 生成。
 - MXU 包由 `tools/ci/install_mxu.py` 生成。
-- release job 打包 MFAA/MXU artifacts，并向 `MAA1999/m9a-cli` 发送 `m9a-release` dispatch。
+- release job 打包 MFAA/MXU artifacts，并向 `MAA1999/m9a-cli` 发送 `m9a-release` dispatch。dispatch payload 携带主仓库生成的 `release_body`，供 CLI 仓库复用同一份 release notes。
 
 `MAA1999/m9a-cli`：
 
 - 仓库地址：`https://github.com/MAA1999/m9a-cli`
-- 以 `MAA1999/M9A` 作为 `M9A` 子仓库。
+- 不再持有 `M9A` 子仓库；CI 收到 dispatch 后按 payload 中的 `source_repo` 与 `source_ref` 临时拉取 M9A 源码。
 - 接收 `m9a-release` dispatch。
-- 使用 payload 中的 `tag`、`source_repo`、`source_ref`、`source_sha`、`source_run_id`、`maa_framework_version` 与 M9A 同步生成 CLI release。
+- 使用 payload 中的 `tag`、`source_repo`、`source_ref`、`source_sha`、`source_run_id`、`maa_framework_version`、`release_body` 与 M9A 同步生成 CLI release。
 
 ## 验收清单
 

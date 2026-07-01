@@ -12,10 +12,10 @@ sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 print(os.getcwd())
 # --- 配置 ---
 # 可以根据需要修改这些值
-PYTHON_VERSION_TARGET = "3.12.10"  # 目标 Python 版本
+PYTHON_VERSION_TARGET = "3.13.14"  # 目标 Python 版本
 # python-build-standalone 的发布标签，需要与 PYTHON_VERSION_TARGET 兼容
-# 前往 https://github.com/indygreg/python-build-standalone/releases 查看最新标签和可用版本
-PYTHON_BUILD_STANDALONE_RELEASE_TAG = "20250409"
+# 前往 https://github.com/astral-sh/python-build-standalone/releases 查看最新标签和可用版本
+PYTHON_BUILD_STANDALONE_RELEASE_TAG = "20260623"
 
 DEST_DIR = os.path.join("install", "python")  # Python 安装的目标目录
 
@@ -188,7 +188,7 @@ def main():
                 os.remove(zip_filepath)
 
         # 修改 ._pth 文件
-        # pth 文件名格式如: python312._pth for Python 3.12.x
+        # pth 文件名格式如: python313._pth for Python 3.13.x
         version_nodots = PYTHON_VERSION_TARGET.replace(".", "")[:3]
         pth_filename_pattern = f"python{version_nodots}._pth"
 
@@ -242,7 +242,7 @@ def main():
 
         # 文件名格式: cpython-{PYTHON_VERSION}+{RELEASE_TAG_DATE}-{ARCH}-apple-darwin-install_only.tar.gz
         pbs_filename = f"cpython-{PYTHON_VERSION_TARGET}+{PYTHON_BUILD_STANDALONE_RELEASE_TAG}-{pbs_arch}-apple-darwin-install_only.tar.gz"
-        download_url = f"https://github.com/indygreg/python-build-standalone/releases/download/{PYTHON_BUILD_STANDALONE_RELEASE_TAG}/{pbs_filename}"
+        download_url = f"https://github.com/astral-sh/python-build-standalone/releases/download/{PYTHON_BUILD_STANDALONE_RELEASE_TAG}/{pbs_filename}"
         tar_filename = pbs_filename  # 使用原始文件名
         tar_filepath = os.path.join(DEST_DIR, tar_filename)  # 下载到目标目录内
 

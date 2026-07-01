@@ -729,26 +729,35 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.CLI_RELEASE_DISPATCH_TOKEN }}
+          CLI_RELEASE_BODY: ${{ needs.changelog.outputs.release_body }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "CLI_RELEASE_DISPATCH_TOKEN is not configured; skip m9a-cli dispatch."
             exit 0
           fi
 
-          gh api --method POST repos/MAA1999/m9a-cli/dispatches --input - <<EOF
-          {
-            "event_type": "m9a-release",
-            "client_payload": {
-              "tag": "${{ needs.meta.outputs.tag }}",
-              "source_repo": "${{ github.repository }}",
-              "source_ref": "${{ github.ref_name }}",
-              "source_sha": "${{ github.sha }}",
-              "source_run_id": "${{ github.run_id }}",
-              "maa_framework_version": "${{ env.MAA_FRAMEWORK_VERSION }}",
-              "is_prerelease": "${{ needs.meta.outputs.is_prerelease }}"
-            }
-          }
-          EOF
+          jq -n \
+            --arg tag "${{ needs.meta.outputs.tag }}" \
+            --arg source_repo "${{ github.repository }}" \
+            --arg source_ref "${{ github.ref_name }}" \
+            --arg source_sha "${{ github.sha }}" \
+            --arg source_run_id "${{ github.run_id }}" \
+            --arg maa_framework_version "${{ env.MAA_FRAMEWORK_VERSION }}" \
+            --arg is_prerelease "${{ needs.meta.outputs.is_prerelease }}" \
+            --arg release_body "$CLI_RELEASE_BODY" \
+            '{
+              event_type: "m9a-release",
+              client_payload: {
+                tag: $tag,
+                source_repo: $source_repo,
+                source_ref: $source_ref,
+                source_sha: $source_sha,
+                source_run_id: $source_run_id,
+                maa_framework_version: $maa_framework_version,
+                is_prerelease: $is_prerelease,
+                release_body: $release_body
+              }
+            }' | gh api --method POST repos/MAA1999/m9a-cli/dispatches --input -
 
       - name: Trigger MirrorChyanUploading
         shell: bash
