@@ -1,11 +1,13 @@
 import re
 import time
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Any
 
 from maa.agent.agent_server import AgentServer
 from maa.context import Context
 from maa.custom_action import CustomAction
-from utils import logger
+from utils.logger import logger
 from utils.maa_types import boxed_results, is_hit, ocr_result, ocr_text
 from utils.params import parse_params
 
@@ -490,7 +492,15 @@ class ActivityTargetLevel(CustomAction):
 class SelectChapter(CustomAction):
     """
     章节选择 。
+
+    卷卡片排在一个横向列表里，目标卷可能不在当前可视区（第4卷「未选择的路」在默认
+    视图右侧约一屏），此时点击节点必然 MISS，流程会空转到超时。因此进入点击循环前
+    先向前翻页把目标卷卡片翻进可视区；向后翻页由 MainChapter_X 的
+    [JumpBack]SwipeLeftForChapter 兜底。
     """
+
+    # 向前翻页查找目标卷的次数上限
+    MAX_SWIPES = 4
 
     def run(
         self,
@@ -501,28 +511,24 @@ class SelectChapter(CustomAction):
         # 返回大章节
         context.run_task("ReturnMainStoryChapter", {"ReturnMainStoryChapter": {}})
 
+        template = f"Combat/MainStoryChapter_{SelectCombatStage.mainStoryChapter}.png"
+        override = {"SelectMainStoryChapter": {"template": template}}
+
+        # 目标卷不在画面里时向前翻页，避免点不到卡片而空转到超时
+        for _ in range(self.MAX_SWIPES):
+            img = context.tasker.controller.post_screencap().wait().get()
+            if is_hit(context.run_recognition("SelectMainStoryChapter", img, override)):
+                break
+            logger.info(f"画面中未找到 {template}，向前翻页查找")
+            context.run_task("SwipeRightForChapter")
+
         flag, count = False, 0
         while not flag:
-            context.run_task(
-                "SelectMainStoryChapter",
-                {
-                    "SelectMainStoryChapter": {
-                        "template": f"Combat/MainStoryChapter_{SelectCombatStage.mainStoryChapter}.png"
-                    }
-                },
-            )
+            context.run_task("SelectMainStoryChapter", override)
             img = context.tasker.controller.post_screencap().wait().get()
             count += 1
             # 判断是否还能匹配上大章节（位置不同/角度不同）
-            rec = context.run_recognition(
-                "SelectMainStoryChapter",
-                img,
-                {
-                    "SelectMainStoryChapter": {
-                        "template": f"Combat/MainStoryChapter_{SelectCombatStage.mainStoryChapter}.png"
-                    }
-                },
-            )
+            rec = context.run_recognition("SelectMainStoryChapter", img, override)
             if not is_hit(rec) or count >= 5:
                 flag = True
 
@@ -552,6 +558,12 @@ class SelectCombatStage(CustomAction):
             logger.error("SelectCombatStage 节点不存在")
             return CustomAction.RunResult(success=False)
         level = node_obj.attach.get("level", "Hard")
+        # 库存保持按实际掉落提前停止时，把累计节点插进胜利链（节点定义见 balanced_farming.json）。
+        # 累计必须排在掉落识别之后、且两处都要挂：掉落识别命中会走它自己的 next，
+        # 只写在 TargetCountVictory.next 里会被绕过（可上报关卡的实测表现是快照不更新、重复刷）。
+        # 胜利横幅的点击节点（TargetCountVictoryClick）在 all_in.json 里定义一次，这里只改 next。
+        depot_accumulate = bool(node_obj.attach.get("depot_accumulate", False))
+        victory_tail = [*(["BF_DepotAccumulate"] if depot_accumulate else []), "TargetCountVictoryClick"]
         logger.info(f"当前关卡: {stage}, 难度: {level}")
 
         # 拆分关卡编号，如 "5-19" 拆为 ["5", "19"]
@@ -569,7 +581,17 @@ class SelectCombatStage(CustomAction):
 
         # 判断是否主线章节（数字），并确定大章节编号
         if mainChapter.isdigit():
-            mainStoryChapter = 1 if int(mainChapter) <= 7 else 2 if int(mainChapter) <= 10 else 3
+            # 大章节（卷）编号：1-7 第1卷「生者与余众」，8-10 第2卷「旅行归来」，
+            # 11-13 第3卷「故事的根须」，14+ 第4卷「未选择的路」（4.0 新增）
+            chapter_num = int(mainChapter)
+            if chapter_num <= 7:
+                mainStoryChapter = 1
+            elif chapter_num <= 10:
+                mainStoryChapter = 2
+            elif chapter_num <= 13:
+                mainStoryChapter = 3
+            else:
+                mainStoryChapter = 4
             # 主线关卡流程
             pipeline = {
                 "EnterTheShowFlag": {"next": ["MainChapter_X"]},
@@ -579,7 +601,7 @@ class SelectCombatStage(CustomAction):
                 # 掉落识别相关节点
                 "TargetCountVictory": {
                     "action": {"type": "DoNothing"},
-                    "next": ["DropRecognition", "TargetCountVictoryClick"],
+                    "next": ["DropRecognition", *victory_tail],
                 },
                 "DropRecognition": {
                     "recognition": {
@@ -593,41 +615,41 @@ class SelectCombatStage(CustomAction):
                         "type": "Custom",
                         "param": {"custom_action": "DropRecognition"},
                     },
-                    "next": [
-                        "TargetCountVictoryClick",
-                    ],
-                },
-                "TargetCountVictoryClick": {
-                    "recognition": {
-                        "type": "OCR",
-                        "param": {
-                            "roi": [678, 10, 473, 240],
-                            "expected": ["战斗", "胜利"],
-                        },
-                    },
-                    "action": {"type": "Click"},
-                    "next": [
-                        "TargetCountWaitReplay",
-                        "[JumpBack]CombatEntering",
-                        "TargetCountVictoryClick",
-                    ],
+                    "next": victory_tail,
                 },
             }
         else:
             mainStoryChapter = None
             # 资源关卡流程
-            pipeline = {
+            pipeline: dict[str, Any] = {
                 "EnterTheShowFlag": {"next": [f"ResourceChapter_{mainChapter}"]},
                 "TargetStageName_OCR": {"expected": [f"{targetStageName}"]},
                 "StageDifficulty": {"next": [f"StageDifficulty_{level}", "TargetStageName"]},
             }
+            if depot_accumulate:
+                # 与主线同形：结算页出现后先跑库存保持累计再点掉它。
+                # 不挂的话自读模式的快照不会更新，规划会反复刷同一批目标。
+                pipeline["TargetCountVictory"] = {
+                    "action": {"type": "DoNothing"},
+                    "next": list(victory_tail),
+                }
 
         context.override_pipeline(pipeline)
+
+        # max_hit 是「本次任务运行内累计」（MaaFW 的 Context::TaskState.hit_count，只有 post_task 才清零），
+        # 而库存保持一个任务会连续选多次关：TargetCountFinish → BF_Plan，规划节点再 override 回 Combat
+        # （depot_maintain.py 的 MAX_ROUNDS_PER_TASK = 50）。不清零的话，「先刷 7-7、再刷 7-26」这类
+        # 换材料重选关会共用同一份 30 次预算，几轮就把右向扫描用光，之后明明存在的关卡被判「未找到」。
+        # 每次选关开始时把两个扫描头的计数清零，让 max_hit 的语义回到「单次选关的上限」。
+        for scan_node in ("SwipeLeftAndFindStage", "SwipeRightAndFindStage"):
+            context.clear_hit_count(scan_node)
 
         SelectCombatStage.stage = stage
         # SelectCombatStage.stageName = stageName
         SelectCombatStage.level = level
         SelectCombatStage.mainStoryChapter = mainStoryChapter
+        _TargetCountState.free_used = False
+        _TargetCountState.candy_page_hits = 0
 
         return CustomAction.RunResult(success=True)
 
@@ -637,43 +659,140 @@ class _TargetCountState:
     already_count: int = 0
     current_times: int = 0
     candy_attempts: int = 0
+    # 心相关卡当日免费次数已用完（由 RecordNoFreePsychube 在章节导航时记录，
+    # 或由吃糖页兜底路由在免费假设被推翻时置位）
+    free_used: bool = False
+    # 兜底路由本次选关内遇到吃糖界面的次数（SelectCombatStage 时重置）
+    candy_page_hits: int = 0
 
 
-def _tc_safe_int(text: str) -> int:
+class _TargetCountPage(Enum):
+    STAGE = auto()
+    RECOVERY = auto()
+    UNKNOWN = auto()
+
+
+@dataclass(frozen=True)
+class _TargetCountAvailability:
+    page: _TargetCountPage
+    available_count: int | None = None
+
+
+def _tc_parse_int(text: str) -> int | None:
     try:
         return int(text)
-    except Exception:
-        return 0
+    except ValueError:
+        return None
 
 
-def _tc_get_text_safe(context: Context, img: Any, rec_name: str) -> str:
+def _tc_get_int(context: Context, img: Any, rec_name: str) -> int | None:
     rec = context.run_recognition(rec_name, img)
     text = ocr_text(rec)
     if not text:
-        logger.debug(f"{rec_name} 识别失败，返回None")
-        return "0"
-    return text
+        logger.debug(f"{rec_name} 识别失败")
+        return None
+
+    value = _tc_parse_int(text)
+    if value is None:
+        logger.debug(f"{rec_name} 识别结果不是有效整数: {text}")
+    return value
 
 
-def _tc_get_available_count(context: Context) -> int:
+def _tc_calculate_available_count(remaining_ap: int, stage_ap: int, combat_times: int) -> int | None:
+    if remaining_ap < 0 or stage_ap <= 0 or combat_times <= 0:
+        return None
+
+    stage_ap_per_combat, remainder = divmod(stage_ap, combat_times)
+    if stage_ap_per_combat <= 0 or remainder != 0:
+        return None
+
+    return remaining_ap // stage_ap_per_combat
+
+
+def _tc_get_availability(context: Context) -> _TargetCountAvailability:
     img = context.tasker.controller.post_screencap().wait().get()
-    remaining_ap = _tc_safe_int(_tc_get_text_safe(context, img, "RecognizeRemainingAp"))
-    stage_ap = _tc_safe_int(_tc_get_text_safe(context, img, "RecognizeStageAp"))
-    combat_times = _tc_safe_int(_tc_get_text_safe(context, img, "RecognizeCombatTimes"))
-    if stage_ap == 0:
-        logger.debug("stage_ap 为0")
-        return 999
-    if combat_times == 0:
-        logger.debug("识别失败，combat_times 为0")
-        return -1
-    stage_ap = stage_ap // combat_times
-    logger.debug(f"剩余体力: {remaining_ap}, 关卡体力: {stage_ap}")
-    return remaining_ap // stage_ap if stage_ap else 0
+    if is_hit(context.run_recognition("EatCandyPage", img)):
+        logger.debug("检测到活性恢复页，当前无可复现次数")
+        return _TargetCountAvailability(page=_TargetCountPage.RECOVERY, available_count=0)
+
+    remaining_ap = _tc_get_int(context, img, "RecognizeRemainingAp")
+    stage_ap = _tc_get_int(context, img, "RecognizeStageAp")
+    combat_times = _tc_get_int(context, img, "RecognizeCombatTimes")
+    if remaining_ap is None or stage_ap is None or combat_times is None:
+        logger.error(
+            "无法识别关卡体力信息: remaining_ap={}, stage_ap={}, combat_times={}",
+            remaining_ap,
+            stage_ap,
+            combat_times,
+        )
+        return _TargetCountAvailability(page=_TargetCountPage.UNKNOWN)
+
+    available_count = _tc_calculate_available_count(remaining_ap, stage_ap, combat_times)
+    if available_count is None:
+        logger.error(
+            "关卡体力信息无效: remaining_ap={}, stage_ap={}, combat_times={}",
+            remaining_ap,
+            stage_ap,
+            combat_times,
+        )
+        return _TargetCountAvailability(page=_TargetCountPage.UNKNOWN)
+
+    logger.debug(f"剩余体力: {remaining_ap}, 关卡体力: {stage_ap // combat_times}")
+    return _TargetCountAvailability(page=_TargetCountPage.STAGE, available_count=available_count)
 
 
 def _tc_pick_times(available_count: int, target_count: int, already_count: int) -> int:
     left_count = max(target_count - already_count, 0)
     return min(4, available_count, left_count)
+
+
+def _tc_is_psychube_stage() -> bool:
+    stage = SelectCombatStage.stage
+    return isinstance(stage, str) and stage.startswith("Psychube-")
+
+
+def _tc_is_eat_candy_disabled(context: Context) -> bool:
+    node = context.get_node_data("EatCandy")
+    return node is not None and not node.get("enabled", True)
+
+
+def request_combat_stop() -> None:
+    """把当前批次设为最后一批：本批复现结束后由 TargetCountProgress 正常收尾。"""
+    _TargetCountState.target_count = _TargetCountState.already_count + _TargetCountState.current_times
+
+
+def battles_done() -> int:
+    """本轮作战已完成的战斗场次（由 TargetCountInit 在每轮开始时清零）。"""
+    return _TargetCountState.already_count
+
+
+# 库存保持的规划节点（定义在 balanced_farming.json）
+DEPOT_PLAN_NODE = "BF_Plan"
+
+
+def depot_batch_end_node(context: Context) -> str:
+    """批次结束时的去向：库存保持留在关卡页把控制权交回规划节点（就地续刷），否则回主界面收尾。"""
+    node = context.get_node_object("SelectCombatStage")
+    if node is not None and bool(node.attach.get("depot_accumulate", False)):
+        return DEPOT_PLAN_NODE
+    return "TargetCountFinish"
+
+
+@AgentServer.custom_action("RecordNoFreePsychube")
+class RecordNoFreePsychube(CustomAction):
+    """
+    记录心相关卡当日免费次数已用完，供 TargetCountDetermine 改按剩余体力核算可复现次数。
+    """
+
+    def run(
+        self,
+        context: Context,
+        argv: CustomAction.RunArg,
+    ) -> CustomAction.RunResult:
+
+        _TargetCountState.free_used = True
+        logger.info("心相关卡免费次数已用完，将按剩余体力计算可复现次数")
+        return CustomAction.RunResult(success=True)
 
 
 @AgentServer.custom_action("TargetCountInit")
@@ -719,23 +838,38 @@ class TargetCountDetermine(CustomAction):
 
         # 已达到目标次数，结束任务
         if _TargetCountState.already_count >= _TargetCountState.target_count:
-            context.override_next("TargetCountDetermine", ["TargetCountFinish"])
+            context.override_next("TargetCountDetermine", [depot_batch_end_node(context)])
             return CustomAction.RunResult(success=True)
 
-        available_count = _tc_get_available_count(context)
-        if available_count == -1:
-            context.override_next("TargetCountDetermine", ["TargetCountAbort"])
-            return CustomAction.RunResult(success=True)
+        if _tc_is_psychube_stage() and not _TargetCountState.free_used:
+            # 意志解析有每日免费次数，不能通过批次总消耗计算可复现次数。
+            times = _tc_pick_times(4, _TargetCountState.target_count, _TargetCountState.already_count)
+        else:
+            availability = _tc_get_availability(context)
+            if availability.page is _TargetCountPage.UNKNOWN or availability.available_count is None:
+                if _tc_is_psychube_stage():
+                    # 免费次数已用完但体力信息识别失败，退回固定次数尝试，由吃糖页兜底节点防卡死。
+                    logger.warning("心相关卡体力信息识别失败，退回固定复现次数")
+                    times = _tc_pick_times(4, _TargetCountState.target_count, _TargetCountState.already_count)
+                else:
+                    context.override_next("TargetCountDetermine", ["TargetCountAbort"])
+                    return CustomAction.RunResult(success=True)
+            else:
+                times = _tc_pick_times(
+                    availability.available_count,
+                    _TargetCountState.target_count,
+                    _TargetCountState.already_count,
+                )
 
-        times = _tc_pick_times(
-            available_count,
-            _TargetCountState.target_count,
-            _TargetCountState.already_count,
-        )
         if times > 0:
             _TargetCountState.current_times = times
             logger.info(f"准备复现 {times} 次，累计已刷 {_TargetCountState.already_count} 次")
             context.override_next("TargetCountDetermine", ["TargetCountOpenPanel"])
+            return CustomAction.RunResult(success=True)
+
+        if _tc_is_eat_candy_disabled(context):
+            logger.info("未启用吃糖，直接结束刷图任务")
+            context.override_next("TargetCountDetermine", ["TargetCountFinish"])
             return CustomAction.RunResult(success=True)
 
         if _TargetCountState.candy_attempts >= 2:
@@ -768,7 +902,7 @@ class TargetCountSelectTimes(CustomAction):
             return CustomAction.RunResult(success=True)
 
         logger.info(f"选择复现 {times} 次")
-        context.run_task(
+        task_detail = context.run_task(
             "SetReplaysTimes",
             {
                 "SetReplaysTimes": {
@@ -780,6 +914,9 @@ class TargetCountSelectTimes(CustomAction):
                 }
             },
         )
+        if task_detail is None or task_detail.status.failed:
+            logger.error(f"选择复现 {times} 次失败，终止任务")
+            context.override_next("TargetCountSelectTimes", ["TargetCountAbort"])
         return CustomAction.RunResult(success=True)
 
 
@@ -795,8 +932,74 @@ class TargetCountEatCandy(CustomAction):
         argv: CustomAction.RunArg,
     ) -> CustomAction.RunResult:
 
-        context.run_task("EatCandy")
-        context.override_next("TargetCountEatCandy", ["TargetCountDetermine"])
+        task_detail = context.run_task("EatCandy")
+        if task_detail is None or task_detail.status.failed:
+            logger.error("补充体力任务执行失败，终止任务")
+            context.override_next("TargetCountEatCandy", ["TargetCountAbort"])
+        else:
+            context.override_next("TargetCountEatCandy", ["TargetCountDetermine"])
+        return CustomAction.RunResult(success=True)
+
+
+@AgentServer.custom_action("TargetCountCandyRoute")
+class TargetCountCandyRoute(CustomAction):
+    """
+    连续复现点击后弹出吃糖界面的兜底路由，防止复现链无法识别吃糖界面而超时失败。
+
+    吃糖页弹出说明"按免费次数盲目选 4 次"的假设不成立：首次弹页切换为按剩余体力
+    核算可复现次数并尝试吃糖；再次弹页说明补体无进展，关闭吃糖界面优雅结束任务。
+    """
+
+    def run(
+        self,
+        context: Context,
+        argv: CustomAction.RunArg,
+    ) -> CustomAction.RunResult:
+
+        _TargetCountState.candy_page_hits += 1
+        no_progress = _TargetCountState.candy_page_hits >= 2
+
+        if _tc_is_eat_candy_disabled(context) or no_progress:
+            logger.info("体力不足且无法通过吃糖继续，关闭吃糖界面并结束刷图任务")
+            context.run_task("QuitEatCandyPage", {"QuitEatCandyPage": {"next": []}})
+            context.override_next("TargetCountCandyPage", ["TargetCountFinish"])
+            return CustomAction.RunResult(success=True)
+
+        _TargetCountState.free_used = True
+        logger.info("体力不足，转为按剩余体力核算复现次数，并尝试从吃糖界面补充体力")
+        context.override_next("TargetCountCandyPage", ["TargetCountEatCandy"])
+        return CustomAction.RunResult(success=True)
+
+
+@AgentServer.custom_action("StartReplayCandyRoute")
+class StartReplayCandyRoute(CustomAction):
+    """
+    固定次数复现点击后弹出吃糖界面的兜底路由。
+
+    吃糖开启时首次先吃糖再回到复现按钮重试；再次弹页说明补体无进展，
+    关闭吃糖界面并结束任务。
+    """
+
+    def run(
+        self,
+        context: Context,
+        argv: CustomAction.RunArg,
+    ) -> CustomAction.RunResult:
+
+        _TargetCountState.candy_page_hits += 1
+        no_progress = _TargetCountState.candy_page_hits >= 2
+
+        if _tc_is_eat_candy_disabled(context) or no_progress:
+            logger.info("体力不足且无法通过吃糖继续，关闭吃糖界面并结束任务")
+            context.run_task("QuitEatCandyPage", {"QuitEatCandyPage": {"next": []}})
+            context.override_next("StartReplay", [])
+            return CustomAction.RunResult(success=True)
+
+        logger.info("体力不足，从吃糖界面补充体力后重试复现")
+        task_detail = context.run_task("EatCandy")
+        if task_detail is None or task_detail.status.failed:
+            logger.warning("吃糖子任务执行失败，仍将重试复现")
+        context.override_next("StartReplayCandyPage", ["StartReplay"])
         return CustomAction.RunResult(success=True)
 
 
@@ -815,12 +1018,13 @@ class TargetCountProgress(CustomAction):
         _TargetCountState.already_count += _TargetCountState.current_times
         _TargetCountState.current_times = 0
         _TargetCountState.candy_attempts = 0
+        _TargetCountState.candy_page_hits = 0
 
         logger.info(f"累计已刷 {_TargetCountState.already_count} 次")
 
         if _TargetCountState.already_count >= _TargetCountState.target_count:
             logger.info("达到目标次数，准备结束任务")
-            context.override_next("TargetCountProgress", ["TargetCountFinish"])
+            context.override_next("TargetCountProgress", [depot_batch_end_node(context)])
         else:
             context.override_next("TargetCountProgress", ["TargetCountDetermine"])
 
@@ -883,19 +1087,39 @@ class SSReopenReplay(CustomAction):
         context.run_task("SSToReplayIfCan")
 
         # 看看要不要吃不吃糖
-        available_count = _tc_get_available_count(context)
-        if available_count == -1:
-            logger.debug("识别战斗次数失败")
-            available_count = 1
-        elif available_count <= 0:
+        availability = _tc_get_availability(context)
+        available_count = availability.available_count
+        if availability.page is _TargetCountPage.UNKNOWN or available_count is None:
+            logger.error("无法识别关卡体力信息，停止重开关卡")
+            context.run_task("HomeButton")
+            context.tasker.post_stop()
+            return CustomAction.RunResult(success=False)
+
+        if available_count <= 0:
+            if _tc_is_eat_candy_disabled(context):
+                logger.info("未启用吃糖，任务结束")
+                context.run_task("HomeButton")
+                return CustomAction.RunResult(success=True)
+
             logger.debug("没体力咯，吃个糖")
             for _ in range(2):  # 最多吃两次糖，防止吃mini糖体力不够
-                context.run_task("EatCandy")
+                task_detail = context.run_task("EatCandy")
+                if task_detail is None or task_detail.status.failed:
+                    logger.error("补充体力任务执行失败，停止重开关卡")
+                    context.run_task("HomeButton")
+                    context.tasker.post_stop()
+                    return CustomAction.RunResult(success=False)
 
-                available_count = _tc_get_available_count(context)
-                if available_count == -1:
-                    logger.debug("识别战斗次数失败")
-                    available_count = 1
+                availability = _tc_get_availability(context)
+                available_count = availability.available_count
+                if availability.page is _TargetCountPage.UNKNOWN or available_count is None:
+                    logger.error("补充体力后无法识别关卡体力信息，停止重开关卡")
+                    context.run_task("HomeButton")
+                    context.tasker.post_stop()
+                    return CustomAction.RunResult(success=False)
+
+                if available_count > 0:
+                    break
             if available_count <= 0:
                 logger.debug("尝试吃糖后体力不够，任务结束。")
                 context.run_task("HomeButton")

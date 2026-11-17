@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "M9A MaaFW Agent project"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "maafw==5.11.1",
+    "maafw>=5.13.0b0",
     "loguru",
     "pillow>=10.0",
     "pytz",
@@ -28,6 +28,8 @@ packages = ["agent"]
 [tool.ruff]
 target-version = "py313"
 line-length = 120
+# Android 客户端工程为独立的本地项目，不参与本仓库 Python 代码规范
+extend-exclude = ["Android"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

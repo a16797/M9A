@@ -2,22 +2,25 @@
     "task": [
         {
             "name": "活动代币刷取",
+            "label": "$Task.CombatActivity",
             "entry": "CombatActivity",
+            "description": "$Task.CombatActivity.desc",
+            "group": [
+                "daily"
+            ],
             "option": [
                 "复刻模式",
                 "活动难度",
                 "吃糖",
                 "自定义作战次数"
-            ],
-            "group": [
-                "daily"
-            ],
-            "description": "主线版本时关闭复刻模式会直接跳过当前任务，如有刷取主线关卡需求请使用常规作战功能"
+            ]
         }
     ],
     "option": {
         "复刻模式": {
             "type": "switch",
+            "label": "$Option.CombatActivity.RerunMode",
+            "description": "$Option.CombatActivity.RerunMode.desc",
             "cases": [
                 {
                     "name": "No",
@@ -50,14 +53,15 @@
                         }
                     }
                 }
-            ],
-            "description": "开启后只尝试刷复刻活动，不开启尝试刷当期活动"
+            ]
         },
         "活动难度": {
             "type": "select",
+            "label": "$Option.CombatActivity.EventDifficulty",
             "cases": [
                 {
                     "name": "艰难",
+                    "label": "$Option.CombatActivity.EventDifficulty.Arduous",
                     "pipeline_override": {
                         "ActivityTargetLevel": {
                             "action": {
@@ -72,6 +76,7 @@
                 },
                 {
                     "name": "意外",
+                    "label": "$Option.CombatActivity.EventDifficulty.Surprise",
                     "pipeline_override": {
                         "ActivityTargetLevel": {
                             "action": {
@@ -86,6 +91,7 @@
                 },
                 {
                     "name": "故事",
+                    "label": "$Option.CombatActivity.EventDifficulty.Story",
                     "pipeline_override": {
                         "ActivityTargetLevel": {
                             "action": {

@@ -14,7 +14,7 @@
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white">
-  <img alt="platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blueviolet">
+  <img alt="platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-blueviolet">
   <img alt="license" src="https://img.shields.io/github/license/MAA1999/M9A">
   <br>
   <img alt="commit" src="https://img.shields.io/github/commit-activity/m/MAA1999/M9A">
@@ -26,7 +26,7 @@
 
 <div align="center">
 
-[English](./README.en.md) | [简体中文](./README.md)
+简体中文 | [English](./README.en.md)
 
 </div>
 
@@ -35,21 +35,29 @@
 - 启动/关闭游戏
 - 收取荒原
 - 每日心相（意志解析）
+- 智能均衡刷材料
 - 常规作战
 - 活动代币刷取
 - 自动深眠
 - 自动醒梦
 - 银行购物
 - 领取奖励
+- 使用兑换码
 - 切换账号
+- 切换艺术框架
 - 局外演绎：黄昏的音序
 - 局外演绎：无声综合征
 - 复刻活动推图
 - 匣中交流赛（拓片杂技赛）
 - 警铃鸣响时
-- 翻斗棋
+- 活动推图（含主线与活动）
+- 翻斗棋速刷
 - 雨前漫游指南
-- 自动推图（测试中）
+- UTTU闪烁集会
+- 完全归纳法
+- 角色升级(beta)
+- 信任奖励
+- 8-bit 街机秀
 
 ## 使用说明
 
@@ -70,9 +78,9 @@
 
 <a href="https://www.star-history.com/#MAA1999/M9A&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MAA1999/M9A&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=MAA1999/M9A&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MAA1999/M9A&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/MAA1999/star-history-assets/main/generated/MAA1999-M9A/dark.webp" />
+   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/MAA1999/star-history-assets/main/generated/MAA1999-M9A/light.webp" />
+   <img alt="Star History Chart" src="https://raw.githubusercontent.com/MAA1999/star-history-assets/main/generated/MAA1999-M9A/light.webp" />
  </picture>
 </a>
 
@@ -89,6 +97,8 @@
   基于 Avalonia UI 构建的 MaaFramework 通用 GUI 解决方案
 - [MXU](https://github.com/MistEO/MXU)  
   基于 MaaFramework PI V2 协议的通用 GUI 客户端，使用 Tauri + React + TypeScript 构建
+- [MaaFwApp](https://github.com/Aliothmoon/MaaFwApp)  
+  MaaFramework PI V2 协议的 Android GUI 客户端，M9A 的 Android 版外壳（见 [Android/](./Android/README.md)）
 - ~~[MFW-CFA](https://github.com/overflow65537/MFW-PyQt6)~~  
   ~~基于 PySide6 与 MaaFramework 的跨平台 GUI~~
 - ~~[MFAWPF](https://github.com/SweetSmellFox/MFAWPF)~~  

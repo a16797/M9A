@@ -5,12 +5,12 @@
             "name": "Maa Agent: Debug",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/agent/bootstrap.py",
+            "program": "${workspaceFolder}/agent/main.py",
             "args": [
                 "{AGENT_ID}"
             ],
             "cwd": "${workspaceFolder}",
-            "env": "{AGENT_ENV}",
+            "env": {},
             "console": "integratedTerminal",
             "justMyCode": false
         }

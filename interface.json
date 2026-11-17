@@ -1,32 +1,47 @@
 {
     "interface_version": 2,
-    "contact": "CONTACT",
-    "license": "LICENSE",
+    "languages": {
+        "zh_cn": "locales/zh_cn.json",
+        "en_us": "locales/en_us.json"
+    },
     "name": "m9a",
     "label": "M9A",
-    "version": "v0.1.0",
     "icon": "logo.ico",
-    "github": "https://github.com/MAA1999/M9A",
     "mirrorchyan_rid": "M9A",
     "mirrorchyan_multiplatform": true,
+    "github": "https://github.com/MAA1999/M9A",
+    "version": "v0.1.0",
+    "contact": "CONTACT",
+    "license": "LICENSE",
+    "welcome": [
+        "$Welcome.1",
+        "$Welcome.2",
+        "$Welcome.3",
+        "$Welcome.4"
+    ],
+    "telemetry": {
+        "sentry": {
+            "dsn": "https://1d1036e30562df13fb24ee19ff261ac3@o4511817821323264.ingest.us.sentry.io/4511856184459264"
+        }
+    },
     "controller": [
         {
             "name": "ADB",
-            "label": "模拟器",
+            "label": "$Controller.Adb",
             "type": "Adb"
         },
         {
             "name": "PC",
             "label": "PC",
             "type": "Win32",
+            "permission_required": true,
             "win32": {
                 "class_regex": "UnityWndClass",
                 "window_regex": "(重返未来|重返未來|Reverse|リバース)[：:：].*1999",
                 "screencap": "PrintWindow",
                 "mouse": "SendMessageWithCursorPos",
                 "keyboard": "SendMessageWithCursorPos"
-            },
-            "permission_required": true
+            }
         },
         {
             "name": "PlayCover",
@@ -36,6 +51,7 @@
     "resource": [
         {
             "name": "官服",
+            "label": "$Resource.Official",
             "path": [
                 "./resource/base"
             ],
@@ -46,6 +62,7 @@
         },
         {
             "name": "B 服",
+            "label": "$Resource.Bilibili",
             "path": [
                 "./resource/base",
                 "./resource/bilibili"
@@ -57,6 +74,7 @@
         },
         {
             "name": "OPPO 服",
+            "label": "$Resource.Oppo",
             "path": [
                 "./resource/base",
                 "./resource/oppo"
@@ -68,6 +86,7 @@
         },
         {
             "name": "小米服",
+            "label": "$Resource.Mi",
             "path": [
                 "./resource/base",
                 "./resource/mi"
@@ -79,6 +98,7 @@
         },
         {
             "name": "华为服",
+            "label": "$Resource.Huawei",
             "path": [
                 "./resource/base",
                 "./resource/huawei"
@@ -90,6 +110,7 @@
         },
         {
             "name": "国际服（EN）",
+            "label": "$Resource.GlobalEn",
             "path": [
                 "./resource/base",
                 "./resource/global_jp",
@@ -103,6 +124,7 @@
         },
         {
             "name": "国际服（JP）",
+            "label": "$Resource.GlobalJp",
             "path": [
                 "./resource/base",
                 "./resource/global_jp"
@@ -115,6 +137,7 @@
         },
         {
             "name": "港澳台服",
+            "label": "$Resource.Tw",
             "path": [
                 "./resource/base",
                 "./resource/global_jp",
@@ -128,6 +151,7 @@
         },
         {
             "name": "国际服（KR）",
+            "label": "$Resource.GlobalKr",
             "path": [
                 "./resource/base",
                 "./resource/global_jp",
@@ -146,18 +170,18 @@
             "child_args": [
                 "run",
                 "python",
-                "agent/bootstrap.py"
+                "agent/main.py"
             ]
         }
     ],
     "group": [
         {
             "name": "daily",
-            "label": "日常任务"
+            "label": "$Group.Daily"
         },
         {
             "name": "standalone",
-            "label": "独立任务"
+            "label": "$Group.Standalone"
         }
     ],
     "import": [
@@ -189,6 +213,10 @@
         "tasks/PreStormProtocol.json",
         "tasks/UTTU.json",
         "tasks/CompleteInduction.json",
-        "tasks/8bit.json"
+        "tasks/8bit.json",
+        "tasks/MusesBox.json",
+        "tasks/CharUpgrade.json",
+        "tasks/TrustReward.json",
+        "tasks/WarehouseInventory.json"
     ]
 }

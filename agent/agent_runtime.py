@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import importlib.metadata
 import json
 import os
 import sys
 from typing import Any
 
-from utils import logger
-from utils.runtime_paths import configure_runtime_paths, get_runtime_paths
+from maafw_paths import ENV_NAME
+from utils.logger import logger
+from utils.runtime_paths import (
+    configure_runtime_paths,
+    default_work_root,
+    get_runtime_paths,
+    seed_work_root,
+)
 
 PI_ENV_KEYS = (
     "PI_INTERFACE_VERSION",
@@ -15,11 +22,15 @@ PI_ENV_KEYS = (
     "PI_CLIENT_LANGUAGE",
     "PI_CLIENT_MAAFW_VERSION",
     "PI_VERSION",
+    "PI_USER_DATA_DIR",
     "PI_CONTROLLER",
     "PI_RESOURCE",
 )
 
 
+# -------------
+# region 启动时的版本检查与资源热更新
+# -------------
 def _read_hot_update_config() -> dict[str, Any]:
     """读取热更新配置"""
     paths = get_runtime_paths()
@@ -32,6 +43,34 @@ def _read_hot_update_config() -> dict[str, Any]:
     except Exception:
         logger.exception("读取 hot_update.json 失败，使用默认配置")
         return {"enable_hot_update": True}
+
+
+# manifest → 用户可理解的功能，用于热更新失败时说明影响范围
+_MANIFEST_FEATURE_HINTS = {
+    "data/activity/manifest.json": "活动代币刷取 / 复刻活动",
+    "data/combat/manifest.json": "常规作战",
+    "data/redeem_code/manifest.json": "使用兑换码",
+    "data/sos/manifest.json": "局外演绎：无声综合征",
+}
+
+
+def _describe_hot_update_failure(update_result: dict[str, Any]) -> str:
+    """把热更新失败整理成用户能看懂的一段话（含影响范围与重试方式）。"""
+    failed_files = list(update_result.get("failed_files") or [])
+    failed_manifests = list(update_result.get("failed_manifests") or [])
+    updated_files = list(update_result.get("updated_files") or [])
+
+    lines = ["资源热更新未完成，以下功能可能仍在使用旧数据："]
+    if failed_manifests:
+        hints = [f"{m}（{_MANIFEST_FEATURE_HINTS.get(m, '未知功能')}）" for m in failed_manifests]
+        lines.append(f"- 未更新：{'; '.join(hints)}")
+    if failed_files:
+        lines.append(f"- 校验失败的文件：{', '.join(failed_files)}")
+    lines.append(f"- 本次已更新 {len(updated_files)} 个文件；失败的文件保持旧版本")
+    lines.append("- 下次启动会自动重试；若反复失败，请携带 debug/custom 日志反馈")
+    if update_result.get("error"):
+        lines.append(f"- 失败原因：{update_result['error']}")
+    return "\n".join(lines)
 
 
 def _check_resource_version() -> None:
@@ -60,6 +99,7 @@ def _hot_update() -> None:
     )
 
     manifest_result = check_manifest_updates()
+    should_save_manifest_cache = manifest_result["success"] and not manifest_result["has_any_update"]
 
     if manifest_result["success"] and not manifest_result["has_any_update"]:
         logger.debug("资源无更新，跳过热更新")
@@ -76,20 +116,80 @@ def _hot_update() -> None:
                 logger.debug("开始检查所有资源...")
 
             update_result = check_and_update_resources(resource_manifests=manifests)
-            if update_result and update_result.get("updated_files"):
-                pass
-            elif update_result and update_result.get("error"):
-                logger.debug(f"热更部分资源更新遇到问题: {update_result['error']}")
+            if update_result and update_result.get("success"):
+                should_save_manifest_cache = manifest_result["success"]
+            elif update_result:
+                # 失败要留下用户能看懂的结论：哪些功能没更新、怎么重试
+                logger.warning(_describe_hot_update_failure(update_result))
             else:
-                logger.debug("热更部分资源已是最新")
+                logger.warning("资源热更新未成功（未返回结果），下次启动会自动重试")
         else:
             logger.debug("所有 manifest 无更新，跳过热更新")
 
-    save_manifest_cache_from_result(manifest_result)
+    if should_save_manifest_cache:
+        save_manifest_cache_from_result(manifest_result)
+    else:
+        logger.debug("热更新未完整成功，保留原 manifest 缓存")
+
+
+# -------------
+# endregion
+# -------------
+
+
+# -------------
+# region 启动入口
+# -------------
+def _log_maafw_version() -> None:
+    """报告 agent 进程实际加载的原生库版本。
+
+    pip 元数据不可信：客户端增量更新往 site-packages 写新版 dist-info 时不删旧版，两份
+    并存时 importlib.metadata.version 返回哪份并无保证（实测返回过时值）。因此以原生库
+    的 MaaVersion() 为准，元数据只在原生查询失败时兜底，失败原因会先记一行 debug。
+
+    必须在导入 maa.agent 之后调用：version() 会首次触发 API 属性初始化，而 Library.open
+    撞上已初始化标志就早退，提前调用会把 Library 钉死在非 agent 模式。
+
+    全部走 debug：版本与加载路径是维护者排查用的诊断信息，不进用户看的 GUI 日志；
+    agent 文件 sink 固定 DEBUG 级，debug/custom/*.log 里始终可查。
+    """
+    try:
+        from maa.library import Library
+
+        version = Library.version()
+        if not version:
+            raise RuntimeError("MaaVersion() 返回空值")
+    except Exception as error:
+        logger.debug("查询原生 MaaFW 版本失败，改用 binding 元数据: {}", error)
+        try:
+            logger.debug("maafw {}", importlib.metadata.version("maafw"))
+        except importlib.metadata.PackageNotFoundError:
+            pass
+        return
+
+    logger.debug("maafw {}", version)
 
 
 def run_agent(project_root_dir: str) -> int:
-    configure_runtime_paths(project_root=project_root_dir, work_root=os.getcwd())
+    # PI v2.11.0: the client passes the absolute directory it owns for config, debug and logs.
+    # Inside a macOS .app the project root lives in the bundle, which a user account cannot write
+    # to, so the working directory is only a fallback for clients that do not set the variable.
+    configure_runtime_paths(project_root=project_root_dir, work_root=default_work_root())
+
+    # main.py 已把 cwd 指到数据目录；把包内基线接过去（data/、config/、interface.json
+    # 复制；resource/、agent/ 等只读资产符号链接），让按 cwd 读相对路径的组件
+    # （libs/drop_core.pyd 读 data/combat/*.json 与 ./interface.json、仓库/SOS/掉落
+    # 模板读 resource/base/image/...）拿到与 resolve() 同一份文件。
+    try:
+        seeded = seed_work_root(get_runtime_paths())
+        if seeded:
+            logger.debug(f"已向数据目录播种 {seeded} 个基线文件")
+    except OSError as error:
+        # 播种失败不致命：resolve() 仍会回落到包内基线，仅按 cwd 读的组件拿到旧数据
+        logger.warning(f"数据目录基线播种失败（{error}），二进制插件可能读到包内旧数据")
+
+    # debug:纯诊断信息，不进 GUI 日志打扰用户；agent 文件 sink 固定 DEBUG 级，排查时 debug/custom/*.log 里仍有
+    logger.debug("MaaFW 二进制目录: {}", os.environ.get(ENV_NAME) or "wheel 自带 (site-packages/maa/bin)")
 
     if len(sys.argv) < 2:
         logger.error("Missing MaaFW Agent socket id argument.")
@@ -103,6 +203,9 @@ def run_agent(project_root_dir: str) -> int:
         logger.error("Run `uv sync` for development or sync runtime before release.")
         return 1
 
+    # 必须在导入 maa.agent 之后调用，原因见 _log_maafw_version
+    _log_maafw_version()
+
     # 版本检查
     _check_resource_version()
 
@@ -112,7 +215,7 @@ def run_agent(project_root_dir: str) -> int:
     import custom
 
     custom.register_all()
-    Tasker.set_log_dir("./debug")
+    Tasker.set_log_dir(str(get_runtime_paths().debug_dir / "agent"))
 
     socket_id = sys.argv[-1]
     logger.debug("socket_id: {}", socket_id)
@@ -138,3 +241,8 @@ def format_env_value(value: str, limit: int = 300) -> str:
     if len(value) <= limit:
         return value
     return f"{value[:limit]}...(truncated, total={len(value)})"
+
+
+# -------------
+# endregion
+# -------------

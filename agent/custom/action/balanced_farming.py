@@ -1,13 +1,36 @@
-import json
 import re
 import time
+from collections.abc import Mapping
 from typing import Any
 
 from maa.agent.agent_server import AgentServer
 from maa.context import Context
 from maa.custom_action import CustomAction
-from utils import logger
+from utils.logger import logger
 from utils.maa_types import best_box, ocr_text
+from utils.material_catalog import SOURCE_WAREHOUSE, CatalogError, MaterialEntry, load_catalog
+from utils.runtime_paths import get_runtime_paths
+
+
+def balanced_candidates(catalog: Mapping[str, MaterialEntry]) -> dict[str, MaterialEntry]:
+    """旧「均衡取最少」流程（`BalancedFarmingAnalyze`）的候选材料。
+
+    两类排除：
+    - 货币类材料（source=character）不在仓库页，扫不到；
+    - **关卡族默认不参与**（`FamilySpec.legacy` 默认 False，必须显式置 True 才进候选）——
+      洞悉本（ME/SL/SS/BW）等资源关卡族因此被整体跳过，它们只在「库存保持」里按逐材料目标刷；
+      不排除的话「谁最少刷谁」会一直往洞悉本上撞。
+
+    当前候选只剩主线材料（主线没有 family，恒参与）。
+
+    入参必须是 `load_catalog()` 的产物而不是原始 JSON —— 目录里的仓库材料已经不写 `name`
+    （显示名的单一来源是 items.json），只有经过目录构建才拿得到名称。
+    """
+    return {
+        item_id: entry
+        for item_id, entry in catalog.items()
+        if entry.source == SOURCE_WAREHOUSE and entry.stage.is_legacy_farmable
+    }
 
 
 @AgentServer.custom_action("BalancedFarmingAnalyze")
@@ -15,9 +38,13 @@ class BalancedFarmingAnalyze(CustomAction):
     _DATA_PATH = "data/combat/balanced_farming.json"
     # 仓库列表最多翻页次数，防止滑动判断异常时死循环
     _MAX_SCROLL_PAGES = 5
-    # 数量文字相对图标 box 的偏移：(dx, dy, dw, dh)，dy 基于图标底边；
-    # 横向收窄到图标内部，避免把格子两侧装饰认成数字
-    _COUNT_ROI_OFFSET = (8, 0, -16, 36)
+    # 数量 ROI：贴图标底边、高 30px，横向只取图标中部一半（避免把格子两侧装饰竖线认成数字）。
+    # 横向收窄是必需的：整宽 71x36 会把单字符「1」稀释成小目标，OCR 置信度掉到 MaaFW 默认阈值
+    # 0.3 以下被丢弃（实测 110403 祝圣秘银 x1 只有 0.228，读不到数量）；中部 44x30 可回到 0.44。
+    _SCREEN_HEIGHT = 720
+    _COUNT_ROI_HEIGHT = 30
+    _COUNT_ROI_DX_RATIO = 0.25
+    _COUNT_ROI_DW_RATIO = -0.5
 
     def run(
         self,
@@ -26,10 +53,21 @@ class BalancedFarmingAnalyze(CustomAction):
     ) -> CustomAction.RunResult:
 
         try:
-            with open(self._DATA_PATH, encoding="utf-8") as f:
-                materials: dict[str, dict[str, Any]] = json.load(f)
-        except (OSError, json.JSONDecodeError) as e:
+            catalog = load_catalog(get_runtime_paths().resolve(self._DATA_PATH))
+        except CatalogError as e:
             logger.error(f"读取材料映射表失败: {self._DATA_PATH}, {e}")
+            return CustomAction.RunResult(success=False)
+        materials = balanced_candidates(catalog)
+        # 被排除的材料由同一份策略推导，日志与实际过滤结果不会脱节
+        skipped = [
+            entry.name
+            for item_id, entry in catalog.items()
+            if entry.source == SOURCE_WAREHOUSE and item_id not in materials
+        ]
+        if skipped:
+            logger.info(f"均衡刷取不包含以下材料（请在「库存保持」里按目标刷取）: {'、'.join(skipped)}")
+        if not materials:
+            logger.error(f"材料映射表里没有可均衡刷取的材料: {self._DATA_PATH}")
             return CustomAction.RunResult(success=False)
 
         # 每页都对全部材料做匹配，收集多次读数；
@@ -41,7 +79,7 @@ class BalancedFarmingAnalyze(CustomAction):
         for page in range(self._MAX_SCROLL_PAGES):
             img = context.tasker.controller.post_screencap().wait().get()
             for item_id in materials:
-                found, count = self._recognize_item(context, img, item_id)
+                found, count = self._recognize_item(context, img, item_id, materials[item_id].name)
                 if not found:
                     continue
                 if count is None:
@@ -61,60 +99,70 @@ class BalancedFarmingAnalyze(CustomAction):
             if values:
                 counts[item_id] = min(values)
                 if len(set(values)) > 1:
-                    logger.warning(
-                        f"材料 {materials[item_id]['name']}({item_id}) 多次读数不一致 {values}，取最小值 {min(values)}"
-                    )
+                    logger.warning(f"材料 {materials[item_id].name} 多次读数不一致 {values}，取最小值 {min(values)}")
             elif item_id in unreadable:
-                logger.warning(f"材料 {materials[item_id]['name']}({item_id}) 数量识别失败，本次不参与均衡")
+                logger.warning(f"材料 {materials[item_id].name} 数量识别失败，本次不参与均衡")
             else:
-                logger.warning(f"仓库中未找到材料 {materials[item_id]['name']}({item_id})，按 0 计")
+                logger.warning(f"仓库中未找到材料 {materials[item_id].name}，按 0 计")
                 counts[item_id] = 0
 
         if not counts:
             logger.error("没有任何材料识别成功，终止任务")
             return CustomAction.RunResult(success=False)
 
-        summary = ", ".join(f"{materials[item_id]['name']}x{counts[item_id]}" for item_id in sorted(counts))
+        summary = ", ".join(f"{materials[item_id].name}x{counts[item_id]}" for item_id in sorted(counts))
         logger.info(f"仓库材料数量: {summary}")
 
         target_id = min(sorted(counts), key=lambda item_id: counts[item_id])
         target = materials[target_id]
-        logger.info(
-            f"数量最少的材料: {target['name']}({counts[target_id]})，目标关卡: {target['stage']} {target['level']}"
-        )
+        logger.info(f"数量最少的材料: {target.name}({counts[target_id]})，目标关卡: {target.stage.code} {target.level}")
 
         context.override_pipeline(
             {
                 "SelectCombatStage": {
-                    "action": {"param": {"custom_action_param": {"stage": target["stage"]}}},
-                    "attach": {"level": target["level"]},
+                    "action": {"param": {"custom_action_param": {"stage": target.stage.code}}},
+                    "attach": {"level": target.level},
                 }
             }
         )
 
         return CustomAction.RunResult(success=True)
 
-    def _recognize_item(self, context: Context, img: Any, item_id: str) -> tuple[bool, int | None]:
+    def _recognize_item(self, context: Context, img: Any, item_id: str, name: str = "") -> tuple[bool, int | None]:
         """匹配单个材料图标并识别其下方数量。
 
         Returns:
             (是否找到图标, 数量)，图标找到但数量识别失败时数量为 None。
         """
+        # order_by=Score：默认按位置取最左达标框，同族近似图标会串号取到别家数量；
+        # green_mask：典类模板仅保留徽记区域（其余涂纯绿），把跨材料近似匹配压到阈值之下
         reco_detail = context.run_recognition(
             "BF_ItemIcon",
             img,
-            {"BF_ItemIcon": {"recognition": {"param": {"template": f"Warehouse/Item-{item_id}.png"}}}},
+            {
+                "BF_ItemIcon": {
+                    "recognition": {
+                        "param": {
+                            "template": f"Warehouse/Item-{item_id}.png",
+                            "order_by": "Score",
+                            "green_mask": True,
+                        }
+                    }
+                }
+            },
         )
         box = best_box(reco_detail)
         if box is None:
             return False, None
 
         x, y, w, h = box
-        dx, dy, dw, dh = self._COUNT_ROI_OFFSET
-        if y + h + dy + dh > 718:
+        dx = int(w * self._COUNT_ROI_DX_RATIO)
+        dw = int(w * self._COUNT_ROI_DW_RATIO)
+        dh = self._COUNT_ROI_HEIGHT
+        if y + h + dh > self._SCREEN_HEIGHT:
             # 数量条被屏幕底部裁切，本屏不读，等滚动后完整出现再读
             return False, None
-        count_roi = [x + dx, y + h + dy, w + dw, dh]
+        count_roi = [x + dx, y + h, w + dw, dh]
         count_detail = context.run_recognition(
             "BF_ItemCount",
             img,
@@ -125,6 +173,6 @@ class BalancedFarmingAnalyze(CustomAction):
         groups = re.findall(r"\d+", text.replace(",", ""))
         logger.debug(f"{item_id} box={list(box)} text='{text}'")
         if not groups:
-            logger.warning(f"材料 {item_id} 图标已找到但数量识别失败: '{text}'")
+            logger.debug(f"材料 {name or item_id} 本屏图标已找到但数量识别失败: '{text}'")
             return True, None
         return True, int(max(groups, key=len))

@@ -110,7 +110,7 @@
                         "name": "SOSCombat"
                     }
                 ],
-                "interrupts": "@stats+@artefact+@harmonic+@resonator+CloseTip"
+                "interrupts": "@stats+@artefact+@harmonic+@resonator+@message+SOSContinue+CloseTip"
             },
             "险象环生": {
                 "actions": [
@@ -148,7 +148,7 @@
                         "name": "SOSCombat"
                     }
                 ],
-                "interrupts": "@stats+@artefact+@harmonic+@resonator+@message+CloseTip"
+                "interrupts": "@stats+@artefact+@harmonic+@resonator+@message+SOSContinue+CloseTip"
             }
         }
     },
@@ -1239,6 +1239,55 @@
                 "interrupts": "@TheOnlyWay"
             },
             "混合物": {
+                "actions": [
+                    {
+                        "type": "SelectOption",
+                        "method": "HSV"
+                    }
+                ],
+                "interrupts": "@TheOnlyWay"
+            },
+            "猴子旋律": {
+                "actions": [
+                    {
+                        "type": "SelectOption",
+                        "method": "HSV"
+                    }
+                ],
+                "interrupts": "@TheOnlyWay"
+            },
+            "临时工作": {
+                "actions": [
+                    {
+                        "type": "SelectOption",
+                        "method": "HSV"
+                    }
+                ],
+                "interrupts": "@TheOnlyWay"
+            },
+            "重返房间": {
+                "actions": [
+                    {
+                        "type": "SelectOption",
+                        "method": "HSV"
+                    },
+                    {
+                        "type": "SelectOption",
+                        "method": "HSV"
+                    }
+                ],
+                "interrupts": "@TheOnlyWay"
+            },
+            "黄金的葬礼": {
+                "actions": [
+                    {
+                        "type": "SelectOption",
+                        "method": "HSV"
+                    }
+                ],
+                "interrupts": "@TheOnlyWay"
+            },
+            "拣选体验": {
                 "actions": [
                     {
                         "type": "SelectOption",

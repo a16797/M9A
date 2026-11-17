@@ -1,0 +1,571 @@
+"""Sentry 报告脚本共用的查询和终端输出工具。
+
+提供 Sentry CLI 探测调用、Release 版本解析排序、游标分页拉取、
+以及宽字符对齐的控制台表格格式化。
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import unicodedata
+from collections.abc import Generator, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, TextIO
+from urllib.parse import quote
+
+try:
+    from .config import CONFIG
+except ImportError:
+    from config import CONFIG
+
+EXPLORE_LIMIT = 1_000
+DEFAULT_SENTRY_TIMEOUT_SECONDS = 120.0
+# 报告默认查询窗口。超过 MAX_RELIABLE_SPAN_PERIOD_DAYS 时 Sentry 只返回截断样本,
+# 绝对计数不可用,因此默认停在可靠窗口内。
+DEFAULT_SPAN_PERIOD = "30d"
+# 仅用于按独立用户数发现 release 的兜底查询:该路径只比较比率,放宽窗口不影响结论。
+DEFAULT_RELEASE_DISCOVERY_PERIOD = "90d"
+MIN_RELEASE_UNIQUE_USERS = 10
+SENTRY_RELEASE_API_LIMIT = 100
+# 独立查询的并发上限。Sentry 的瓶颈是单次请求延迟而非吞吐,少量并发即可显著提速。
+MAX_EXPLORE_WORKERS = 4
+
+# Sentry explore 的时间窗口超过约 30 天时不再做真实聚合,而是返回一批固定的
+# 截断样本(不同 period 拿到完全相同的结果),绝对计数完全不可用。
+MAX_RELIABLE_SPAN_PERIOD_DAYS = 30
+PERIOD_UNIT_DAYS = {"m": 1 / 1_440, "h": 1 / 24, "d": 1.0, "w": 7.0}
+
+
+def period_days(period: str) -> float | None:
+    """把 Sentry 的 period 表达式换算成天数;无法识别的写法返回 None。
+
+    同时支持 ``7d`` / ``24h`` / ``30m`` / ``2w`` 这类相对窗口,以及工具的
+    ``--period`` help 里宣传的 ``2026-08-23..2026-08-24`` 显式区间。
+    """
+    match = re.fullmatch(r"\s*(\d+)\s*([mhdw])\s*", period, re.IGNORECASE)
+    if match is not None:
+        return int(match.group(1)) * PERIOD_UNIT_DAYS[match.group(2).lower()]
+
+    range_match = re.fullmatch(r"\s*([^\s.]+)\s*\.\.\s*([^\s.]+)\s*", period)
+    if range_match is None:
+        return None
+    try:
+        start = datetime.fromisoformat(range_match.group(1).replace("Z", "+00:00"))
+        end = datetime.fromisoformat(range_match.group(2).replace("Z", "+00:00"))
+        span = end - start
+    except (TypeError, ValueError):
+        return None
+    return span.total_seconds() / 86_400
+
+
+def warn_on_truncated_period(period: str) -> bool:
+    """period 超出可靠窗口时向 stderr 提示一次,返回本次是否已提示。
+
+    报告入口在发起查询前调用一次即可,避免每次 `explore()` 都重复刷屏。
+    """
+    days = period_days(period)
+    if days is None or days <= MAX_RELIABLE_SPAN_PERIOD_DAYS:
+        return False
+    print(
+        f"[警告] period={period} 超过 {MAX_RELIABLE_SPAN_PERIOD_DAYS} 天:Sentry explore 对长窗口返回截断样本,"
+        f"绝对计数不可用(比率趋势仍可参考)。需要精确计数时请改用 {MAX_RELIABLE_SPAN_PERIOD_DAYS}d 以内的窗口。",
+        file=sys.stderr,
+        flush=True,
+    )
+    return True
+
+
+REPORT_LOCK_FILENAME = "m9a-sentry-report.lock"
+# 报告最长会跑几分钟;超过这个时长仍存在的锁视为上一轮异常退出留下的残留。
+REPORT_LOCK_STALE_SECONDS = 900.0
+
+
+def _report_lock_path() -> Path:
+    """报告建议性锁的位置(系统临时目录,跨报告实例共享)。"""
+    return Path(tempfile.gettempdir()) / REPORT_LOCK_FILENAME
+
+
+@contextmanager
+def report_run_guard(lock_path: Path | None = None) -> Generator[None]:
+    """报告运行期间持有一个建议性锁,并在检测到并发报告时提醒一次。
+
+    Sentry explore 的瓶颈是单次请求延迟而非吞吐,并发跑多个报告只会互相拖慢,
+    因此这里不做互斥,只在发现另一个报告时向 stderr 提示。残留锁按 mtime 判定过期。
+    """
+    lock = lock_path or _report_lock_path()
+    try:
+        age_seconds = time.time() - lock.stat().st_mtime
+    except OSError:
+        age_seconds = None
+    if age_seconds is not None and age_seconds < REPORT_LOCK_STALE_SECONDS:
+        print(
+            f"[提示] 检测到另一个 Sentry 报告正在运行(已进行约 {age_seconds:.0f}s)。"
+            "并发运行多个报告会互相拖慢,建议等它结束。",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    owner = str(os.getpid())
+    try:
+        lock.write_text(owner, encoding="utf-8")
+        yield
+    finally:
+        try:
+            # 只清理本次运行写入的锁,避免把后来者的锁删掉。
+            if lock.read_text(encoding="utf-8") == owner:
+                lock.unlink()
+        except OSError:
+            pass
+
+
+def get_release_pattern() -> re.Pattern[str]:
+    """获取项目 Release 匹配正则。"""
+    if CONFIG.release_pattern:
+        return re.compile(CONFIG.release_pattern)
+    prefix = CONFIG.project_prefix
+    return re.compile(
+        rf"(?:^|[+/]){re.escape(prefix)}@v?(\d+)\.(\d+)\.(\d+)(?:-(beta|rc)\.(\d+))?$",
+        re.IGNORECASE,
+    )
+
+
+RELEASE_PATTERN = get_release_pattern()
+M9A_RELEASE_PATTERN = RELEASE_PATTERN
+
+
+def resolve_sentry_command() -> str:
+    """查找当前系统中可执行的 sentry 命令。"""
+    candidates = ("sentry.cmd", "sentry.exe", "sentry") if os.name == "nt" else ("sentry",)
+    for candidate in candidates:
+        command = shutil.which(candidate)
+        if command:
+            return command
+    raise RuntimeError("未找到 sentry 命令。请先安装 Sentry CLI,并确认 sentry --version 可运行。")
+
+
+def run_sentry_json_value(
+    sentry_command: str,
+    arguments: Sequence[str],
+    *,
+    verbose: bool = False,
+    timeout_seconds: float = DEFAULT_SENTRY_TIMEOUT_SECONDS,
+) -> Any:
+    """执行 Sentry CLI 并解析其 JSON 输出。"""
+    if verbose:
+        print(f"+ sentry {' '.join(arguments)}", file=sys.stderr)
+
+    try:
+        process = subprocess.run(
+            [sentry_command, *arguments],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"sentry {' '.join(arguments)} 执行超过 {timeout_seconds:g} 秒,请检查网络、认证状态或缩短查询范围。"
+        ) from error
+    if process.returncode != 0:
+        diagnostic = process.stderr.strip() or process.stdout.strip()
+        raise RuntimeError(f"sentry {' '.join(arguments)} 执行失败(退出码 {process.returncode}):\n{diagnostic}")
+
+    try:
+        result = json.loads(process.stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"sentry CLI 未返回有效 JSON:\nstdout:\n{process.stdout}\nstderr:\n{process.stderr}"
+        ) from error
+    return result
+
+
+def run_sentry_json(
+    sentry_command: str,
+    arguments: Sequence[str],
+    *,
+    verbose: bool = False,
+    timeout_seconds: float = DEFAULT_SENTRY_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """执行 Sentry CLI,并要求其返回 JSON 对象。"""
+    result = run_sentry_json_value(
+        sentry_command,
+        arguments,
+        verbose=verbose,
+        timeout_seconds=timeout_seconds,
+    )
+    if not isinstance(result, dict):
+        raise RuntimeError("sentry CLI 返回了非对象 JSON。")
+    return result
+
+
+def explore(
+    sentry_command: str,
+    *,
+    target: str,
+    period: str,
+    fields: Sequence[str],
+    query: str,
+    sort: str | None = None,
+    fresh: bool = True,
+    verbose: bool = False,
+    timeout_seconds: float = DEFAULT_SENTRY_TIMEOUT_SECONDS,
+) -> list[dict[str, Any]]:
+    """查询 Sentry spans,并跟随游标返回全部分页结果。
+
+    ``fresh=False`` 允许 Sentry CLI 复用本地缓存:同一查询只需约三分之一的往返时间,
+    代价是结果可能略滞后于最新遥测。
+    """
+    base_arguments = ["explore", target, "--dataset", "spans"]
+    for field in fields:
+        base_arguments.extend(("--field", field))
+    base_arguments.extend(("--query", query))
+    if sort:
+        base_arguments.extend(("--sort", sort))
+    base_arguments.extend(("--period", period, "--limit", str(EXPLORE_LIMIT)))
+    if fresh:
+        base_arguments.append("--fresh")
+    base_arguments.append("--json")
+
+    rows: list[dict[str, Any]] = []
+    cursor: str | None = None
+    seen_cursors: set[str] = set()
+    while True:
+        arguments = [*base_arguments]
+        if cursor:
+            arguments.extend(("--cursor", cursor))
+        result = run_sentry_json(
+            sentry_command,
+            arguments,
+            verbose=verbose,
+            timeout_seconds=timeout_seconds,
+        )
+        data = result.get("data", [])
+        if not isinstance(data, list):
+            raise RuntimeError("sentry explore 返回的 data 不是数组。")
+        rows.extend(data)
+        if not result.get("hasMore"):
+            return rows
+
+        next_cursor = result.get("nextCursor")
+        if not isinstance(next_cursor, str) or not next_cursor:
+            raise RuntimeError("sentry explore 声明存在下一页,但未返回有效游标。")
+        if next_cursor in seen_cursors:
+            raise RuntimeError(f"sentry explore 返回了重复分页游标:{next_cursor}")
+        seen_cursors.add(next_cursor)
+        cursor = next_cursor
+
+
+@dataclass(frozen=True)
+class SpanQuery:
+    """一次 spans 聚合查询的字段、过滤与排序。"""
+
+    fields: tuple[str, ...]
+    query: str = ""
+    sort: str | None = None
+
+
+def explore_all(
+    sentry_command: str,
+    *,
+    target: str,
+    period: str,
+    queries: Sequence[SpanQuery],
+    fresh: bool = True,
+    verbose: bool = False,
+    timeout_seconds: float = DEFAULT_SENTRY_TIMEOUT_SECONDS,
+) -> list[list[dict[str, Any]]]:
+    """并发执行互不依赖的 spans 查询,并按输入顺序返回各自结果。
+
+    单个 explore 内部必须串行跟随游标分页,而 Sentry explore 的瓶颈是单次请求延迟
+    而非吞吐;因此在查询之间并发能成倍缩短报告耗时,又不会把请求数放大。
+    """
+    if not queries:
+        return []
+    if len(queries) == 1:
+        only = queries[0]
+        return [
+            explore(
+                sentry_command,
+                target=target,
+                period=period,
+                fields=only.fields,
+                query=only.query,
+                sort=only.sort,
+                fresh=fresh,
+                verbose=verbose,
+                timeout_seconds=timeout_seconds,
+            )
+        ]
+
+    with ThreadPoolExecutor(max_workers=min(len(queries), MAX_EXPLORE_WORKERS)) as executor:
+        futures = [
+            executor.submit(
+                explore,
+                sentry_command,
+                target=target,
+                period=period,
+                fields=query.fields,
+                query=query.query,
+                sort=query.sort,
+                fresh=fresh,
+                verbose=verbose,
+                timeout_seconds=timeout_seconds,
+            )
+            for query in queries
+        ]
+        return [future.result() for future in futures]
+
+
+PRERELEASE_RANKS: dict[str, int] = {
+    "alpha": -1,
+    "beta": 0,
+    "rc": 1,
+}
+STABLE_RELEASE_RANK = 2
+
+
+def release_version_key(release: str) -> tuple[int, int, int, int, int] | None:
+    """解析 release 字符串内嵌的版本排序键,不匹配或预发布类型未知时返回 None。"""
+    match = RELEASE_PATTERN.search(release)
+    if match is None:
+        return None
+
+    major, minor, patch, prerelease, prerelease_number = match.groups()
+    if prerelease is None or prerelease_number is None:
+        prerelease_rank = STABLE_RELEASE_RANK
+        prerelease_number = "0"
+    else:
+        rank = PRERELEASE_RANKS.get(prerelease.lower())
+        if rank is None:
+            return None
+        prerelease_rank = rank
+
+    return (
+        int(major),
+        int(minor),
+        int(patch),
+        prerelease_rank,
+        int(prerelease_number),
+    )
+
+
+def version_label(release: str) -> str | None:
+    """从 release 字符串中提取内嵌的版本标签,例如 "v4.7.1"。"""
+    match = RELEASE_PATTERN.search(release)
+    if match is None:
+        return None
+    major, minor, patch, prerelease, prerelease_number = match.groups()
+    label = f"v{major}.{minor}.{patch}"
+    if prerelease is not None and prerelease_number is not None:
+        label += f"-{prerelease.lower()}.{prerelease_number}"
+    return label
+
+
+m9a_release_version_key = release_version_key
+m9a_version_label = version_label
+
+
+def select_latest_reported_release(
+    rows: Sequence[dict[str, Any]],
+) -> str | None:
+    """选择发布流程已 finalize 并记录 deploy 的最新 release。"""
+    candidates: list[tuple[datetime, tuple[int, int, int, int, int], str]] = []
+    for row in rows:
+        release = row.get("version")
+        released_at = row.get("dateReleased")
+        deploy_count = row.get("deployCount")
+        if (
+            not isinstance(release, str)
+            or not isinstance(released_at, str)
+            or not isinstance(deploy_count, int)
+            or deploy_count < 1
+        ):
+            continue
+
+        version = release_version_key(release)
+        if version is None:
+            continue
+        try:
+            release_time = datetime.fromisoformat(released_at.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        candidates.append((release_time, version, release))
+
+    return max(candidates)[2] if candidates else None
+
+
+select_latest_reported_m9a_release = select_latest_reported_release
+
+
+def select_latest_release(rows: Sequence[dict[str, Any]]) -> str:
+    """从 spans 中选择用户数达标的最新 release。"""
+    candidates: list[tuple[tuple[int, int, int, int, int], int, int, str]] = []
+    for row in rows:
+        release = row.get("release")
+        user_count = row.get("count_unique(user)")
+        trace_count = row.get("count_unique(trace)")
+        if (
+            not isinstance(release, str)
+            or not isinstance(user_count, int)
+            or not isinstance(trace_count, int)
+            or user_count < MIN_RELEASE_UNIQUE_USERS
+        ):
+            continue
+
+        version = release_version_key(release)
+        if version is None:
+            continue
+        candidates.append((version, user_count, trace_count, release))
+
+    if not candidates:
+        prefix_desc = f"{CONFIG.project_prefix}@" if CONFIG.project_prefix else ""
+        raise RuntimeError(
+            f"Sentry 中找不到格式为 {prefix_desc}vX.Y.Z 或 {prefix_desc}vX.Y.Z-beta.N、"
+            f"且至少有 {MIN_RELEASE_UNIQUE_USERS} 位独立用户的 release,"
+            "请通过 --release 显式指定。"
+        )
+    return max(candidates)[3]
+
+
+select_latest_m9a_release = select_latest_release
+
+
+def query_sentry_releases(
+    sentry_command: str,
+    *,
+    target: str,
+    verbose: bool = False,
+    timeout_seconds: float = DEFAULT_SENTRY_TIMEOUT_SECONDS,
+) -> list[dict[str, Any]]:
+    """查询项目最新一页的 Sentry release 元数据。"""
+    organization, separator, project = target.partition("/")
+    if not separator or not organization or not project or "/" in project:
+        raise ValueError(f"无效的 Sentry target:{target!r},应为 <org>/<project>。")
+
+    endpoint = (
+        f"projects/{quote(organization, safe='')}/{quote(project, safe='')}/"
+        f"releases/?per_page={SENTRY_RELEASE_API_LIMIT}"
+    )
+    result = run_sentry_json_value(
+        sentry_command,
+        ("api", endpoint, "--json"),
+        verbose=verbose,
+        timeout_seconds=timeout_seconds,
+    )
+    if isinstance(result, dict) and isinstance(result.get("body"), list):
+        result = result["body"]
+    if not isinstance(result, list) or not all(isinstance(row, dict) for row in result):
+        raise RuntimeError("Sentry release API 返回的 JSON 不是对象数组。")
+    return result
+
+
+def resolve_latest_release(
+    sentry_command: str,
+    *,
+    target: str,
+    fresh: bool = True,
+    verbose: bool = False,
+    timeout_seconds: float = DEFAULT_SENTRY_TIMEOUT_SECONDS,
+) -> str:
+    """优先使用发布流程上报的 release,旧版本回退到 spans 样本。"""
+    release_rows = query_sentry_releases(
+        sentry_command,
+        target=target,
+        verbose=verbose,
+        timeout_seconds=timeout_seconds,
+    )
+    reported_release = select_latest_reported_release(release_rows)
+    if reported_release is not None:
+        return reported_release
+
+    rows = explore(
+        sentry_command,
+        target=target,
+        period=DEFAULT_RELEASE_DISCOVERY_PERIOD,
+        fields=("release", "count_unique(user)", "count_unique(trace)"),
+        query="",
+        sort="-count_unique(user)",
+        fresh=fresh,
+        verbose=verbose,
+        timeout_seconds=timeout_seconds,
+    )
+    return select_latest_release(rows)
+
+
+resolve_latest_m9a_release = resolve_latest_release
+
+
+def format_rate(rate: float | None) -> str:
+    """把小数失败率格式化为百分比。"""
+    return "暂无样本" if rate is None else f"{rate:.1%}"
+
+
+def show_progress(message: str, *, quiet: bool) -> None:
+    """向标准错误输出阶段进度,不污染报告正文。"""
+    if not quiet:
+        print(message, file=sys.stderr, flush=True)
+
+
+def display_width(value: str) -> int:
+    """计算终端中的 Unicode 显示宽度,中文等宽字符按两列计算。"""
+    width = 0
+    for character in value:
+        if unicodedata.combining(character):
+            continue
+        width += 2 if unicodedata.east_asian_width(character) in {"F", "W"} else 1
+    return width
+
+
+def pad_display(value: str, width: int, *, align_right: bool = False) -> str:
+    """按照终端显示宽度填充文本。"""
+    padding = " " * (width - display_width(value))
+    return f"{padding}{value}" if align_right else f"{value}{padding}"
+
+
+def write_console_table(
+    headers: Sequence[str],
+    values: Sequence[Sequence[str]],
+    output: TextIO,
+    *,
+    right_aligned: set[int] | None = None,
+) -> None:
+    """输出处理中日韩宽字符的 Unicode 框线表格。"""
+    alignments = right_aligned or set()
+    widths = [
+        max(display_width(value) for value in (header, *(row[index] for row in values)))
+        for index, header in enumerate(headers)
+    ]
+
+    def border(left: str, middle: str, right: str) -> str:
+        return left + middle.join("─" * (width + 2) for width in widths) + right
+
+    def table_row(row: Sequence[str], *, header: bool = False) -> str:
+        cells = [
+            pad_display(
+                value,
+                widths[index],
+                align_right=index in alignments and not header,
+            )
+            for index, value in enumerate(row)
+        ]
+        return "│ " + " │ ".join(cells) + " │"
+
+    print(border("┌", "┬", "┐"), file=output)
+    print(table_row(headers, header=True), file=output)
+    print(border("├", "┼", "┤"), file=output)
+    for row in values:
+        print(table_row(row), file=output)
+    print(border("└", "┴", "┘"), file=output)

@@ -3,10 +3,12 @@
         "recognition": "DirectHit",
         "next": [
             "EnterProduct",
-            "[JumpBack]ExpandProduct"
+            "[JumpBack]ExpandProduct",
+            "WildernessCompanyUnavailable"
         ]
     },
     "ExpandProduct": {
+        "max_hit": 3,
         "recognition": {
             "type": "OCR",
             "param": {
@@ -41,6 +43,32 @@
                 407,
                 100
             ]
+        }
+    },
+    "WildernessCompanyUnavailable": {
+        "recognition": {
+            "type": "And",
+            "param": {
+                "all_of": [
+                    {
+                        "sub_name": "StandaloneGoodDreamWell",
+                        "recognition": {
+                            "type": "OCR",
+                            "param": {
+                                "roi": [
+                                    7,
+                                    669,
+                                    90,
+                                    26
+                                ],
+                                "expected": "好梦井",
+                                "only_rec": true
+                            }
+                        }
+                    },
+                    "FlagInWilderness_rec"
+                ]
+            }
         }
     },
     "EnterProduct": {
@@ -109,7 +137,8 @@
         "post_delay": 3000,
         "next": [
             "CollectProductNext",
-            "[JumpBack]ExitCollectProductAwards"
+            "[JumpBack]ExitCollectProductAwards",
+            "CollectProduct"
         ]
     },
     "ExitCollectProductAwards": {
@@ -117,12 +146,15 @@
             "type": "TemplateMatch",
             "param": {
                 "roi": [
-                    169,
-                    139,
-                    167,
-                    67
+                    120,
+                    70,
+                    700,
+                    200
                 ],
-                "template": "Wilderness/CollectProductAwards.png"
+                "template": [
+                    "Wilderness/CollectProductAwards.png",
+                    "Wilderness/CollectProductAwards2.png"
+                ]
             }
         },
         "action": {

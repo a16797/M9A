@@ -14,7 +14,7 @@ Powered by [MaaFramework](https://github.com/MaaXYZ/MaaFramework)!
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white">
-  <img alt="platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blueviolet">
+  <img alt="platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-blueviolet">
   <img alt="license" src="https://img.shields.io/github/license/MAA1999/M9A">
   <br>
   <img alt="commit" src="https://img.shields.io/github/commit-activity/m/MAA1999/M9A">
@@ -26,7 +26,7 @@ Powered by [MaaFramework](https://github.com/MaaXYZ/MaaFramework)!
 
 <div align="center">
 
-[English](./README.en.md) | [简体中文](./README.md)
+English | [简体中文](./README.md)
 
 </div>
 
@@ -35,21 +35,29 @@ Powered by [MaaFramework](https://github.com/MaaXYZ/MaaFramework)!
 - Start/Close Game
 - Collect Wasteland
 - Daily Psychube (Will Analysis)
+- Smart Balanced Material Farming
 - Regular Combat
-- Event Farming
+- Event Token Farming
 - Auto Deep Sleep
 - Auto Awakening Dream
 - Bank Shopping
 - Claim Rewards
+- Redeem Codes
 - Switch Account
+- Switch Art Framework
 - Outside Deduction: The Series of Dusks
 - Outside Deduction: The Syndrome of Silence
 - Rerun Event Stage Clear
 - Artefact Masters (Rubbing Acrobatics)
 - When the Alarm Sounds
-- Critter Crash
+- Event Stage Clear (main story and events)
+- Critter Crash Fast Farm
 - Pre-Storm Protocol
-- Auto Stage Clear (Testing)
+- UTTU Flicker Assembly
+- Complete Induction
+- Character Upgrade (beta)
+- Trust Rewards
+- 8-bit Arcade Show
 
 ## User Guide
 
@@ -70,9 +78,9 @@ For more documents, please visit the [MaaFramework](https://github.com/MaaXYZ/Ma
 
 <a href="https://www.star-history.com/#MAA1999/M9A&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MAA1999/M9A&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=MAA1999/M9A&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MAA1999/M9A&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/MAA1999/star-history-assets/main/generated/MAA1999-M9A/dark.webp" />
+   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/MAA1999/star-history-assets/main/generated/MAA1999-M9A/light.webp" />
+   <img alt="Star History Chart" src="https://raw.githubusercontent.com/MAA1999/star-history-assets/main/generated/MAA1999-M9A/light.webp" />
  </picture>
 </a>
 
@@ -89,6 +97,8 @@ For more documents, please visit the [MaaFramework](https://github.com/MaaXYZ/Ma
   Universal MaaFramework GUI solution built with Avalonia UI
 - [MXU](https://github.com/MistEO/MXU)  
   A universal GUI client based on the MaaFramework PI V2 protocol, built with Tauri + React + TypeScript
+- [MaaFwApp](https://github.com/Aliothmoon/MaaFwApp)  
+  Android GUI client for the MaaFramework PI V2 protocol; the Android shell of M9A (see [Android/](./Android/README.md))
 - ~~[MFW-CFA](https://github.com/overflow65537/MFW-PyQt6)~~  
   ~~Cross-platform GUI based on PySide6 and MaaFramework~~
 - ~~[MFAWPF](https://github.com/SweetSmellFox/MFAWPF)~~  

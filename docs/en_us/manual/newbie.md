@@ -1,6 +1,7 @@
 ---
 order: 1
 icon: ri:guide-fill
+description: "Set up M9A from scratch — check your system version, install the runtime libraries, unpack the release, connect an emulator, and run your first automated task in Reverse: 1999."
 ---
 
 <!-- markdownlint-disable MD033 -->
@@ -13,18 +14,18 @@ icon: ri:guide-fill
 
 <div align="center">
 
-|                            |       Windows        |   macOS    |               Linux               |     Android     |
-| :------------------------: | :------------------: | :--------: | :-------------------------------: | :-------------: |
-|    System Requirements     | Windows 10 and above | Self-test  |             Self-test             | Not recommended |
-| Environment Setup Required |         Yes          |    Yes     |                Yes                |       Yes       |
-|     Emulator Required      |         Yes          |    Yes     | Emulator or containerized Android |       No        |
-|           Usage            |      GUI or CLI      | GUI or CLI |            GUI or CLI             |       CLI       |
+|                            |       Windows        |   macOS    |               Linux               |       Android       |
+| :------------------------: | :------------------: | :--------: | :-------------------------------: | :-----------------: |
+|    System Requirements     | Windows 10 and above | Self-test  |             Self-test             | Android 9 and above |
+| Environment Setup Required |         Yes          |    Yes     |                Yes                |         No          |
+|     Emulator Required      |         Yes          |    Yes     | Emulator or containerized Android |         No          |
+|           Usage            |      GUI or CLI      | GUI or CLI |            GUI or CLI             |         GUI         |
 
-|               | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows Users | In most cases, please download the x86_64 architecture                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Mac Users     | M9A supports both Apple Silicon and Intel chip Mac computers<br>But it's more recommended for Intel chip Mac computers to use Mac's built-in multi-system installation of Windows<br>And use Windows version M9A and emulator                                                                                                                                                                                                                                                                                       |
-| Android Users | M9A no longer provides Android version release packages<br>If you are very familiar with mobile phone operations and wish to use Android physical devices, please go to [MaaFramework](https://github.com/MaaXYZ/MaaFramework/) to install it yourself<br>You can refer to [Usage Method](https://github.com/MaaXYZ/MaaFramework/issues/475), and [MAA Documentation](https://maa.plus/docs/en-us/manual/device/android.html)<br>This method is complex and has certain risks, not recommended for beginner players |
+|               | Notes                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows Users | In most cases, please download the x86_64 architecture                                                                                                                                                                                                                                                                                                                            |
+| Mac Users     | M9A supports both Apple Silicon and Intel chip Mac computers<br>But it's more recommended for Intel chip Mac computers to use Mac's built-in multi-system installation of Windows<br>And use Windows version M9A and emulator                                                                                                                                                     |
+| Android Users | M9A publishes an Android client APK (see [Releases](https://github.com/MAA1999/M9A/releases); for physical devices grab `M9A-android-arm64-v8a-<version>.apk`, for emulators and other x86 environments use `M9A-android-x86_64-<version>.apk`)<br>Requires Android 9 or newer; on first launch grant notifications and the battery whitelist, then authorise via Shizuku or root |
 
 </div>
 
@@ -78,8 +79,7 @@ icon: ri:guide-fill
     </tr>
     <tr>
        <td><div align="center">Requires<br>Python</div></td>
-        <td colspan="6"><div align="center">The archive comes with it, no additional steps required</div></td>
-        <td colspan="3"><div align="center">Requires Python 3.10 ≤ version < 3.14</div></td>
+        <td colspan="9"><div align="center">The archive comes with it, no additional steps required</div></td>
     </tr>
   </tbody>
 </table>
@@ -158,7 +158,7 @@ All users of the **MFA** graphical interface need to download and install **.NET
 
 #### 3. Python
 
-Linux users need to install Python separately.
+Every archive ships its own Python runtime with all dependencies, so nothing has to be installed.
 
 <details>
 
@@ -168,8 +168,8 @@ Linux users need to install Python separately.
 
 <blockquote>
 
-- Your system needs to have **Python version ≥ 3.10** installed. This is required for M9A to start and manage its internal environment.
-- M9A will automatically create and use an independent virtual environment and install the required Python dependency packages (from `requirements.txt`) when it is run for the first time. You **do not** need to manually create a virtual environment or install these dependencies.
+- The `python/` directory inside the archive is the Python runtime M9A uses (Python 3.13), with the dependencies preinstalled, so startup needs no network access.
+- You **do not** need to install a system Python, create a virtual environment, or install any dependency yourself.
 
 </blockquote>
 
@@ -185,9 +185,9 @@ Chinese users can also download at high speed through [MirrorChyan](https://mirr
 
 <div align="center">
 
-|                      |          Windows          |                                                macOS                                                |                                                Linux                                                |
-| :------------------: | :-----------------------: | :-------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------: |
-| You need to download | `M9A-win-x86_64-vXXX.zip` | `M9A-macos-x86_64-vXXX.tar.gz` or `M9A-macos-aarch64-vXXX.tar.gz`<br>depending on your architecture | `M9A-linux-x86_64-vXXX.tar.gz` or `M9A-linux-aarch64-vXXX.tar.gz`<br>depending on your architecture |
+|                      |          Windows          |                                                                                       macOS                                                                                       |                                                Linux                                                |                                                                                    Android                                                                                    |
+| :------------------: | :-----------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| You need to download | `M9A-win-x86_64-vXXX.zip` | `M9A-macos-x86_64-vXXX-MXU.dmg` or `M9A-macos-aarch64-vXXX-MXU.dmg`<br>depending on your architecture, containing `M9A.app`<br>the MFAA GUI is still shipped as `...-MFAA.tar.gz` | `M9A-linux-x86_64-vXXX.tar.gz` or `M9A-linux-aarch64-vXXX.tar.gz`<br>depending on your architecture | `M9A-android-universal-<version>.apk`<br>or `M9A-android-arm64-v8a-<version>.apk` (recommended for physical devices)<br>or `M9A-android-x86_64-<version>.apk` (x86 emulators) |
 
 </div>
 
@@ -201,8 +201,9 @@ Chinese users can also download at high speed through [MirrorChyan](https://mirr
       <li>In the window that appears, you can see the processor information.</li>
     </ol>
     <ul>
-      <li>If using Intel X86 processor, please download <code>M9A-macos-x86_64-vXXX.tar.gz</code></li>
-      <li>If using Apple Silicon series such as M1, M2, etc. ARM architecture processors, please download <code>M9A-macos-aarch64-vXXX.tar.gz</code></li>
+      <li>If using Intel X86 processor, please download <code>M9A-macos-x86_64-vXXX-MXU.dmg</code></li>
+      <li>If using Apple Silicon series such as M1, M2, etc. ARM architecture processors, please download <code>M9A-macos-aarch64-vXXX-MXU.dmg</code></li>
+      <li>The dmg contains <code>M9A.app</code> (MXU GUI): drag it into Applications. The MFAA GUI is still shipped as a <code>.tar.gz</code> archive</li>
     </ul>
   </blockquote>
 </details>
@@ -268,6 +269,16 @@ Can't change to `16:9` ratio when using the International Version PC client? Use
     </li>
     <li>
       <details>
+        <summary>Step 0</summary>
+          <ol>
+            <li>After opening, select option 3 to switch between EN (International) and JP (Japan) servers</li>
+            <li>The current server is displayed at the top of the menu</li>
+          </ol>
+          <img src="/images/en-us/newbie-init-script-step1.webp" alt="Step 0">
+      </details>
+    </li>
+    <li>
+      <details>
         <summary>Step 1</summary>
           <ol>
             <li>After opening, enter 1 in the command line</li>
@@ -313,53 +324,43 @@ Confirm complete extraction and ensure M9A is extracted to an independent folder
 
 #### macOS
 
+The macOS build ships as a dmg containing `M9A.app` (MXU GUI).
+
+1. Open the downloaded `M9A-macos-<arch>-vXXX-MXU.dmg` and drag `M9A.app` into Applications.
+2. Launch `M9A.app` from Launchpad or Applications.
+
 <details>
-  <summary>Details</summary>
+  <summary>Using MFAAvalonia or the command line (MaaPiCli)</summary>
   <p></p>
   <blockquote>
 
-1. Open terminal, extract the distributed archive:
+The MFAA GUI and MaaPiCli are still distributed as `.tar.gz`, so extract and run them as before:
 
-    **Option 1: Extract to system directory (requires administrator privileges)**
+```shell
+mkdir -p ~/M9A
+tar -xzf M9A-macos-<arch>-vXXX-MFAA.tar.gz -C ~/M9A
+cd ~/M9A
+./m9a
+```
 
-    ```shell
-    sudo mkdir -p /usr/local/bin/M9A
-    sudo tar -xzf <downloaded M9A archive path> -C /usr/local/bin/M9A
-    ```
+  </blockquote>
+</details>
 
-    **Option 2: Extract to user directory (recommended, no sudo required)**
+<details>
+  <summary>Gatekeeper security prompt handling</summary>
+  <p></p>
+  <blockquote>
 
-    ```shell
-    mkdir -p ~/M9A
-    tar -xzf <downloaded M9A archive path> -C ~/M9A
-    ```
-
-2. Enter the extraction directory and run the program:
-
-    ```shell
-    cd /usr/local/bin/M9A
-    ./M9A
-    ```
-
-If you want to use the **graphical interface**, follow step 2 and run the `M9A` program.
-
-⚠️Gatekeeper security prompt handling:
-
-In macOS 10.15 (Catalina) and later, Gatekeeper may prevent unsigned applications from running.  
+In macOS 10.15 (Catalina) and later, Gatekeeper may prevent ad-hoc signed (not notarised) applications from running.  
 If you encounter errors such as "Cannot open because the developer cannot be verified", please choose one of the following solutions:
 
 ```shell
-# Solution 1: Take M9A as an example to remove the quarantine attribute (recommended, subject to the actual path)
-sudo xattr -rd com.apple.quarantine /usr/local/bin/M9A/M9A
-# Or user directory version: xattr -rd com.apple.quarantine ~/M9A/M9A
+# Solution 1: remove the quarantine attribute (recommended, subject to the actual path)
+sudo xattr -rd com.apple.quarantine /Applications/M9A.app
 
-# Solution 2: Add to Gatekeeper whitelist
-sudo spctl --add /usr/local/bin/M9A/M9A
-# Or user directory version: spctl --add ~/M9A/M9A
+# Solution 2: right-click M9A.app in Finder → Open, then click Open in the dialog
 
-# Solution 3: Process the entire directory at once
-sudo xattr -rd com.apple.quarantine /usr/local/bin/M9A/*
-# Or user directory version: xattr -rd com.apple.quarantine ~/M9A/*
+# Solution 3: System Settings → Privacy & Security → Open Anyway
 ```
 
   </blockquote>
@@ -367,7 +368,20 @@ sudo xattr -rd com.apple.quarantine /usr/local/bin/M9A/*
 
 #### Linux
 
-Same as macOS, download the corresponding version of the archive, extract it, and then run `M9A`.
+Same as Windows, download the corresponding version of the archive, extract it, and then run `M9A`.
+
+#### Android
+
+Download the APK for your device's architecture from [Releases](https://github.com/MAA1999/M9A/releases): pick `arm64-v8a` for physical devices, `x86_64` for x86 emulators, or `universal` if unsure.
+
+1. On first launch, grant the **notification permission** and add M9A to the **battery whitelist**: background running, scheduled triggers and progress notifications all rely on these.
+2. Authorise via Shizuku or root and wait for the service to connect. Shizuku must be installed and started first: on Android 11 and above it can be started on-device via wireless debugging; on older versions (without root) a computer connected over ADB is required once, see the [official Shizuku documentation](https://shizuku.rikka.app/).
+3. The first launch unpacks the task resources automatically.
+4. Pick the server and tick tasks inside the app to start; no ADB connection configuration is needed.
+
+> [!NOTE]
+>
+> Tasks run on a **virtual display** created by the app (background mode): the phone stays usable while idling and the screen may turn off; the resolution (720P / 1080P) is chosen in the app. A **foreground mode** that directly controls the current screen is also available.
 
 ---
 
@@ -668,26 +682,6 @@ For Mac users using PlayCover, select PlayCover in the **Controller Type** secti
 ---
 
 #### Settings
-
-##### pip Settings
-
-M9A supports configuring pip installation related settings through the `config/pip_config.json` file. Generally, you don't need to modify this file unless you have special requirements.
-
-  <details>
-    <summary>config/pip_config.json Example</summary>
-    <p></p>
-    <blockquote>
-
-```jsonc
-{
-    "enable_pip_install": true, // Whether to enable pip installation, default true
-    "mirror": "https://pypi.tuna.tsinghua.edu.cn/simple", // Mirror source
-    "backup_mirror": "https://mirrors.ustc.edu.cn/pypi/simple", // Backup mirror sources
-}
-```
-
-  </blockquote>
-  </details>
 
 ##### Resource Hot Update Configuration
 

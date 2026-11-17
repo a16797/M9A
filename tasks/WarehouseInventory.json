@@ -1,0 +1,13 @@
+{
+    "task": [
+        {
+            "name": "仓库材料识别",
+            "label": "$Task.WarehouseInventory",
+            "entry": "WarehouseInventory",
+            "description": "$Task.WarehouseInventory.desc",
+            "group": [
+                "daily"
+            ]
+        }
+    ]
+}

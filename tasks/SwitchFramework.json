@@ -2,9 +2,10 @@
     "task": [
         {
             "name": "切换艺术框架",
+            "label": "$Task.SwitchFramework",
             "entry": "switch_menu",
-            "option": [
-                "艺术框架"
+            "group": [
+                "daily"
             ],
             "pipeline_override": {
                 "RecordId": {
@@ -14,17 +15,19 @@
                     "next": []
                 }
             },
-            "group": [
-                "daily"
+            "option": [
+                "艺术框架"
             ]
         }
     ],
     "option": {
         "艺术框架": {
             "type": "select",
+            "label": "$Option.SwitchFramework.ArtFramework",
             "cases": [
                 {
                     "name": "手提箱制式（初始）",
+                    "label": "$Option.SwitchFramework.ArtFramework.Suitcase",
                     "pipeline_override": {
                         "frame_art_open": {
                             "recognition": {
@@ -44,6 +47,7 @@
                 },
                 {
                     "name": "伊卡洛斯所见",
+                    "label": "$Option.SwitchFramework.ArtFramework.Icarus",
                     "pipeline_override": {
                         "frame_art_open": {
                             "recognition": {
@@ -63,6 +67,7 @@
                 },
                 {
                     "name": "渐弱之心弦",
+                    "label": "$Option.SwitchFramework.ArtFramework.Diminuendo",
                     "pipeline_override": {
                         "frame_art_open": {
                             "recognition": {
@@ -82,6 +87,7 @@
                 },
                 {
                     "name": "裁纸饰朱梅",
+                    "label": "$Option.SwitchFramework.ArtFramework.PaperCutPlum",
                     "pipeline_override": {
                         "frame_art_open": {
                             "recognition": {
@@ -94,6 +100,26 @@
                             "recognition": {
                                 "param": {
                                     "template": "SwitchMenu/frame/frame4close.png"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "鸮式特快",
+                    "label": "$Option.SwitchFramework.ArtFramework.OwlExpress",
+                    "pipeline_override": {
+                        "frame_art_open": {
+                            "recognition": {
+                                "param": {
+                                    "template": "SwitchMenu/frame/frame5open.png"
+                                }
+                            }
+                        },
+                        "frame_art_select": {
+                            "recognition": {
+                                "param": {
+                                    "template": "SwitchMenu/frame/frame5close.png"
                                 }
                             }
                         }

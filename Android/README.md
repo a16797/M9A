@@ -1,0 +1,79 @@
+# Android 客户端
+
+外壳是 [MaaFwApp](https://github.com/Aliothmoon/MaaFwApp) 子模块，资源和 agent 用本仓库的树，改完直接出包。
+
+## 首次
+
+```bash
+git submodule update --init --recursive Android/MaaFwApp
+python Android/MaaFwApp/scripts/setup_maa_framework.py --abi arm64-v8a
+python Android/MaaFwApp/scripts/build_agent_bundle.py \
+    --out Android/agent-dist \
+    --requirements requirements.txt \
+    --exclude pillow --require pillow==11.0.0 \
+    --extra-index-url https://chaquo.com/pypi-13.1/
+```
+
+OCR 模型由 `MaaCommonAssets` 子模块提供、不进 git，同步机制与桌面端一致（由 `maa-project.json` 的 `ocr` 字段驱动）。本地没跑过桌面端同步的话先执行：
+
+```bash
+pnpm dlx create-maa-project@latest --update ocr-models
+```
+
+在 `Android/MaaFwApp/local.properties` 里写（不进 git）：
+
+```properties
+sdk.dir=<Android SDK>
+pi.profile=../profile.yaml
+build.debugAbi=arm64-v8a
+```
+
+## 出包
+
+```bash
+./Android/MaaFwApp/gradlew -p Android/MaaFwApp :app:installDebug
+```
+
+改 `interface.json`、`tasks/`、`agent/` 后重新 `installDebug` 即可，不必再指外部路径。换了 `requirements.txt` 再跑一遍 `build_agent_bundle.py`。本地出 release 包时 `setup_maa_framework.py` 要用 `--abi all`、`build_agent_bundle.py` 要加 `--abi x86_64`，否则 x86_64 上会缺运行时。
+
+掉落识别核心（drop_core）的 Android 模块只在 CI 里从私有 release 下（`PRIVATE_REPO_TOKEN`，见 `.github/workflows/android-build.yml`）。本地出包不带它，agent 会退回结算页自读掉落，功能可用、精度略差。
+
+升外壳：
+
+```bash
+git -C Android/MaaFwApp fetch
+git -C Android/MaaFwApp checkout origin/main
+git add Android/MaaFwApp
+```
+
+## CI
+
+debug 包走 **Build Android APK**（push / PR 自动触发，手动 dispatch 可选 release 出 APK 工件、不发布；缺 `KEYSTORE_BASE64` 时为未签名包）；正式包由 **Release** 流程在 `v*` tag 上统一收口：调 `android-build.yml` 出三个签名 APK，**等桌面包也就绪后一次性创建 Release**（桌面 11 个资产 + APK 3 个），随后派发 Mirror酱 一次传完桌面与 Android。构建逻辑本体在可复用的 `.github/workflows/android-build.yml`（`macos-latest` + JDK 25 + NDK 29 + Python 3.13），android.yml 与 release.yml 都只是调用方。
+
+包名与 MaaFW 版本都由 `tools/android-packaging.mjs` 解析（放在脚本里而不是 workflow 内联，是为了可单测、也方便别的项目复用；用 Node 而非 Python 是刻意的——纯 pipeline 项目不引入 Python）：资产前缀取 `maa-project.json` 的 `project.displayName`（不可用时退回 `slug`），MaaFW tag 按项目侧固定的版本配对内核 release。
+
+发布与桌面共用同一批 `v*` tag：tag 上 Release 流程把桌面与 Android 的资产一起传进**同一个 GitHub Release**。APK 的 `versionName` / `versionCode` 取自最外层仓库的 `git describe` 与提交数，所以 tag 统一后与应用内自更新的版本比较自动对齐。
+
+改 `Android/`、`agent/`、`tasks/`、`resource/`、`data/`、`locales/`、`config/`、`requirements.txt`、`interface.json`、`maa-project.json`、`MaaCommonAssets`（子模块 gitlink；`MaaCommonAssets/**` 匹配不到）、`tools/android-packaging.mjs` 或 `tools/ci/download_drop_core.py` 等会触发构建。
+
+三个 APK 由 `android-build.yml` 的三个 job 出：
+
+| job | 资产 | 内容 |
+| --- | --- | --- |
+| `build` | `M9A-android-universal-<tag>.apk` | 双 ABI 通用包 |
+| `abi-split`（arm64-v8a） | `M9A-android-arm64-v8a-<tag>.apk` | 只铺 arm64 的 MaaFramework 与 agent 运行时 |
+| `abi-split`（x86_64） | `M9A-android-x86_64-<tag>.apk` | 同上，x86_64 |
+
+`abi-split` 每个包只建自己的那份运行时（`build_agent_bundle.py --abi <abi>`）并写 `build.releaseAbi=<abi>`；debug 包同理只建 arm64。配方里**不写死 `abi`**，外壳按 `agent-dist` 里实际存在的运行时打包，所以单 ABI 包里连 `bundle.zip` 也只有一份运行时，体积约为 universal 的一半。应用内更新优先选本机 ABI 的资产、选不到才回退 universal，所以单 ABI 包的 ABI 标记必须保留，而 universal 包不能带任何标记。
+
+MaaFW 版本与桌面**同源固定**，发版不用改 yml：
+
+- agent 项目看 `requirements.txt` 的 `maafw==X`（`uv` / Dependabot bump 即全线跟进）；纯 pipeline 项目看 `maa-project.json` 的 `maafw` 字段
+- Android 的 Python 绑定只随内核（MaaAgentCoreAndroid）发布（公开索引没有 Android 版 `maafw` 轮子，`build_agent_bundle.py` 会按 `core ships …` 丢弃 requirements 的 `maafw==X`），所以 resolver 按固定版本 X 去内核 repo 挑 `*-maafwX` 配对 release，client 原生库（`jniLibs/*.so`）铺同版本 MaaFramework，保证 APK 里前后端同版本
+- 内核还没出 `maafwX` 配对时自动降级到不高于 X 的最高配对（`::warning::` 打出降级前后版本，构建摘要的 `core fallback` 也留痕）——绑定与原生库仍同版本，只是比固定版本旧，内核发版后降级自动消失，不用改任何配置；固定版本比内核全部配对都旧（多半是版本写错）才报错并列出现有配对。救急可用 `AGENT_CORE_TAG` 环境变量钉别的内核 release（client 原生库会跟着内核走、偏离固定版本，出包前记得撤）
+- `maa-project.json` 钉了具体版本且与 requirements 不一致时打 warning（GUI 运行时与 agent 绑定的漂移，PC 侧同样存在）
+- 手动跑 workflow 时 `maafw_tag` 仍可覆盖（会破坏前后一致，一般不用）
+
+Mirror酱 上传由 release.yml 建完 Release 后派发的 `mirrorchyan-upload` 一次性收口：`mirrorchyan.yml` 里桌面走 `M9A` / `M9A-MXU` 两条资源流，Android 的「可执行包」走 `M9A_exec`，由 `mirrorchyan_android` job 按 universal → `arch: any`、arm64-v8a → `arch: arm64`、x86_64 → `arch: x64` 三条流上传。应用内更新查的是这条「可执行包」流——配方里的 `update.mirrorchyanRid: M9A_exec` 会压过 PI 的 `mirrorchyan_rid`（后者是桌面资源包）。
+
+Release 需要仓库 Secrets：`KEYSTORE_BASE64`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD`，以及 `MirrorChyanUploadToken`。缺 `KEYSTORE_BASE64` 时：非 tag 的运行（fork / 镜像仓 / 手动 dispatch）打 warning 出未签名包，tag 上直接失败——未签名 APK 装不上、也进不了应用内更新。手动跑时可用 `maafw_tag` 指定 MaaFramework 的 tag，留空则按 requirements / maa-project.json 固定的版本解析。

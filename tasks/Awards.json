@@ -2,25 +2,25 @@
     "task": [
         {
             "name": "领取奖励",
+            "label": "$Task.Awards",
             "entry": "Awards",
+            "group": [
+                "daily"
+            ],
             "option": [
                 "领取邮件奖励",
                 "领取任务奖励",
                 "领取吼吼点唱机",
-                "领取前线观察室奖励",
                 "活动盒子奖励",
                 "迷思海周扫荡奖励",
-                "领取拉普拉斯论坛奖励"
-            ],
-            "group": [
-                "daily"
+                "光影栖身处刮卡"
             ]
         }
     ],
     "option": {
         "领取邮件奖励": {
             "type": "switch",
-            "label": "领取邮件奖励",
+            "label": "$Option.Awards.Mail",
             "cases": [
                 {
                     "name": "Yes",
@@ -38,19 +38,19 @@
         },
         "领取任务奖励": {
             "type": "switch",
-            "label": "领取任务奖励",
+            "label": "$Option.Awards.Tasks",
             "cases": [
                 {
                     "name": "Yes",
+                    "option": [
+                        "领取每日活跃奖励",
+                        "领取每周活跃奖励"
+                    ],
                     "pipeline_override": {
                         "Sub_DailyBadge": {
                             "enabled": true
                         }
-                    },
-                    "option": [
-                        "领取每日活跃奖励",
-                        "领取每周活跃奖励"
-                    ]
+                    }
                 },
                 {
                     "name": "No",
@@ -64,7 +64,7 @@
         },
         "领取每日活跃奖励": {
             "type": "switch",
-            "label": "领取每日活跃奖励",
+            "label": "$Option.Awards.DailyActivity",
             "cases": [
                 {
                     "name": "Yes",
@@ -82,7 +82,7 @@
         },
         "领取每周活跃奖励": {
             "type": "switch",
-            "label": "领取每周活跃奖励",
+            "label": "$Option.Awards.WeeklyActivity",
             "cases": [
                 {
                     "name": "Yes",
@@ -102,7 +102,7 @@
         },
         "领取每周显影罐": {
             "type": "switch",
-            "label": "领取每周显影罐",
+            "label": "$Option.Awards.WeeklyDevelopingJar",
             "cases": [
                 {
                     "name": "No",
@@ -126,7 +126,7 @@
         },
         "领取吼吼点唱机": {
             "type": "switch",
-            "label": "领取吼吼点唱机",
+            "label": "$Option.Awards.Jukebox",
             "cases": [
                 {
                     "name": "Yes"
@@ -137,66 +137,30 @@
                         "Sub_JukeboxBadge": {
                             "enabled": false
                         },
-                        "Sub_JukeboxBadge_3.7": {
+                        "Sub_JukeboxBadge_CarnivalAlbum": {
                             "enabled": false
                         }
                     }
-                }
-            ]
-        },
-        "领取前线观察室奖励": {
-            "type": "switch",
-            "label": "领取前线观察室奖励",
-            "cases": [
-                {
-                    "name": "Yes",
-                    "pipeline_override": {}
-                },
-                {
-                    "name": "No",
-                    "pipeline_override": {
-                        "AwardWarRoom": {
-                            "enabled": false
-                        }
-                    }
-                }
-            ]
-        },
-        "领取拉普拉斯论坛奖励": {
-            "description": "3.4版本使用",
-            "type": "switch",
-            "label": "领取拉普拉斯论坛奖励",
-            "cases": [
-                {
-                    "name": "No",
-                    "pipeline_override": {
-                        "EventLaplace": {
-                            "enabled": false
-                        }
-                    }
-                },
-                {
-                    "name": "Yes",
-                    "pipeline_override": {}
                 }
             ]
         },
         "活动盒子奖励": {
             "type": "switch",
+            "label": "$Option.Awards.EventBox",
             "cases": [
                 {
                     "name": "Yes",
-                    "pipeline_override": {
-                        "AwardBox": {
-                            "enabled": true
-                        }
-                    },
                     "option": [
                         "活动奖励·狂想与解构",
                         "活动奖励·崭新的电波",
                         "活动奖励·吼吼狂欢夜",
                         "活动奖励·播种于月光下"
-                    ]
+                    ],
+                    "pipeline_override": {
+                        "AwardBox": {
+                            "enabled": true
+                        }
+                    }
                 },
                 {
                     "name": "No",
@@ -210,7 +174,7 @@
         },
         "活动奖励·狂想与解构": {
             "type": "switch",
-            "label": "狂想与解构",
+            "label": "$Option.Awards.EventRhapsody",
             "cases": [
                 {
                     "name": "Yes",
@@ -232,7 +196,7 @@
         },
         "活动奖励·崭新的电波": {
             "type": "switch",
-            "label": "崭新的电波",
+            "label": "$Option.Awards.EventNewWaves",
             "cases": [
                 {
                     "name": "Yes",
@@ -254,7 +218,7 @@
         },
         "活动奖励·吼吼狂欢夜": {
             "type": "switch",
-            "label": "吼吼狂欢夜",
+            "label": "$Option.Awards.EventRoarCarnival",
             "cases": [
                 {
                     "name": "Yes",
@@ -276,7 +240,7 @@
         },
         "活动奖励·播种于月光下": {
             "type": "switch",
-            "label": "播种于月光下",
+            "label": "$Option.Awards.EventSownMoonlight",
             "cases": [
                 {
                     "name": "Yes",
@@ -298,6 +262,7 @@
         },
         "迷思海周扫荡奖励": {
             "type": "switch",
+            "label": "$Option.Awards.MysterySeaWeekly",
             "cases": [
                 {
                     "name": "Yes",
@@ -311,6 +276,28 @@
                     "name": "No",
                     "pipeline_override": {
                         "AwardReveriesInTheRain": {
+                            "enabled": false
+                        }
+                    }
+                }
+            ]
+        },
+        "光影栖身处刮卡": {
+            "type": "switch",
+            "label": "$Option.Awards.ArtOfIllumination",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "AwardArtOfIllumination": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "AwardArtOfIllumination": {
                             "enabled": false
                         }
                     }

@@ -1,0 +1,13 @@
+{
+    "task": [
+        {
+            "name": "信任奖励",
+            "label": "$Task.TrustReward",
+            "entry": "Character",
+            "description": "$Task.TrustReward.desc",
+            "group": [
+                "standalone"
+            ]
+        }
+    ]
+}

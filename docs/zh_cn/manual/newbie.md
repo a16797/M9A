@@ -1,6 +1,7 @@
 ---
 order: 1
 icon: ri:guide-fill
+description: 从零配置 M9A：确认系统版本、安装运行库、下载解压、连接模拟器，并在《重返未来：1999》里跑通第一条自动化任务。
 ---
 
 <!-- markdownlint-disable MD033 -->
@@ -13,18 +14,18 @@ icon: ri:guide-fill
 
 <div align="center">
 
-|              |      Windows      |      macOS       |       Linux        | Android |
-| :----------: | :---------------: | :--------------: | :----------------: | :-----: |
-|   系统要求   | Windows 10 及以上 |     自行尝试     |      自行尝试      | 不推荐  |
-| 需要配置环境 |        是         |        是        |         是         |   是    |
-|  需要模拟器  |        是         |        是        | 模拟器或容器化安卓 |   否    |
-|   使用方式   | 图形界面或命令行  | 图形界面或命令行 |  图形界面或命令行  | 命令行  |
+|              |      Windows      |      macOS       |       Linux        |     Android      |
+| :----------: | :---------------: | :--------------: | :----------------: | :--------------: |
+|   系统要求   | Windows 10 及以上 |     自行尝试     |      自行尝试      | Android 9 及以上 |
+| 需要配置环境 |        是         |        是        |         是         |        否        |
+|  需要模拟器  |        是         |        是        | 模拟器或容器化安卓 |        否        |
+|   使用方式   | 图形界面或命令行  | 图形界面或命令行 |  图形界面或命令行  |     图形界面     |
 
-|              | 备注                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows 用户 | 绝大部分情况请下载 x86_64 架构                                                                                                                                                                                                                                                                                                                                            |
-| Mac 用户     | M9A 同时支持搭载 Apple Silicon 和 Intel 芯片的 Mac 电脑<br>但更推荐搭载 Intel 芯片的 Mac 电脑使用 Mac 自带的多系统安装 Windows<br>并使用 Windows 版 M9A 和模拟器                                                                                                                                                                                                          |
-| Android 用户 | M9A 已不再提供 Android 版本发行包<br>如您非常了解手机操作并希望使用 Android 实体设备，请前往 [MaaFramework](https://github.com/MaaXYZ/MaaFramework/) 自行安装<br>可参考 [使用方法](https://github.com/MaaXYZ/MaaFramework/issues/475) ，以及 [MAA文档](https://maa.plus/docs/zh-cn/manual/device/android.html) <br>此方法较为复杂且具有一定风险，不推荐入门玩家使用此方法 |
+|              | 备注                                                                                                                                                                                                                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows 用户 | 绝大部分情况请下载 x86_64 架构                                                                                                                                                                                                                                                  |
+| Mac 用户     | M9A 同时支持搭载 Apple Silicon 和 Intel 芯片的 Mac 电脑<br>但更推荐搭载 Intel 芯片的 Mac 电脑使用 Mac 自带的多系统安装 Windows<br>并使用 Windows 版 M9A 和模拟器                                                                                                                |
+| Android 用户 | M9A 提供 Android 客户端安装包（见 [Releases](https://github.com/MAA1999/M9A/releases)，真机推荐 `M9A-android-arm64-v8a-<版本>.apk`，模拟器等 x86 环境用 `M9A-android-x86_64-<版本>.apk`）<br>需要 Android 9 及以上；首次启动请授予通知与电池白名单，并选择 Shizuku 或 root 授权 |
 
 </div>
 
@@ -78,8 +79,7 @@ icon: ri:guide-fill
     </tr>
     <tr>
        <td><div align="center">需安装<br>Python</div></td>
-        <td colspan="6"><div align="center">压缩包自带，无需其他操作</div></td>
-        <td colspan="3"><div align="center">需要 Python 3.10 ≤ version < 3.14</div></td>
+        <td colspan="9"><div align="center">压缩包自带，无需其他操作</div></td>
     </tr>
   </tbody>
 </table>
@@ -158,7 +158,7 @@ Windows 用户**必须安装 VCRedist x64**：这是运行 M9A (无论是命令�
 
 #### 3. Python
 
-Linux 用户需要单独安装 Python 。
+各平台压缩包均自带 Python 运行时与全部依赖，无需单独安装。
 
 <details>
 
@@ -168,8 +168,8 @@ Linux 用户需要单独安装 Python 。
 
 <blockquote>
 
-- 您的系统需要安装 **Python 版本 ≥ 3.10**。这是 M9A 启动和管理其内部环境所必需的。
-- M9A 首次运行时会自动创建并使用独立的虚拟环境，并安装所需的 Python 依赖包 (来自 `requirements.txt`)。您**无需**手动创建虚拟环境或安装这些依赖。
+- 压缩包内的 `python/` 目录即为 M9A 使用的 Python 运行时（Python 3.13），依赖已随包预装，启动时无需联网。
+- 您**无需**安装系统 Python，也**无需**手动创建虚拟环境或安装依赖。
 
 </blockquote>
 
@@ -185,9 +185,9 @@ M9A 下载（更新）地址： [GitHub 发布页](https://github.com/MAA1999/M9
 
 <div align="center">
 
-|            |          Windows          |                                        macOS                                        |                                        Linux                                        |
-| :--------: | :-----------------------: | :---------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------: |
-| 您需要下载 | `M9A-win-x86_64-vXXX.zip` | `M9A-macos-x86_64-vXXX.tar.gz` 或 `M9A-macos-aarch64-vXXX.tar.gz`<br>取决于您的架构 | `M9A-linux-x86_64-vXXX.tar.gz` 或 `M9A-linux-aarch64-vXXX.tar.gz`<br>取决于您的架构 |
+|            |          Windows          |                                                                    macOS                                                                     |                                        Linux                                        |                                                                   Android                                                                   |
+| :--------: | :-----------------------: | :------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------: |
+| 您需要下载 | `M9A-win-x86_64-vXXX.zip` | `M9A-macos-x86_64-vXXX-MXU.dmg` 或 `M9A-macos-aarch64-vXXX-MXU.dmg`<br>取决于您的架构，内含 `M9A.app`<br>MFAA 图形界面仍为 `...-MFAA.tar.gz` | `M9A-linux-x86_64-vXXX.tar.gz` 或 `M9A-linux-aarch64-vXXX.tar.gz`<br>取决于您的架构 | `M9A-android-universal-<版本>.apk`<br>或 `M9A-android-arm64-v8a-<版本>.apk`（真机推荐）<br>或 `M9A-android-x86_64-<版本>.apk`（x86 模拟器） |
 
 </div>
 
@@ -201,8 +201,9 @@ M9A 下载（更新）地址： [GitHub 发布页](https://github.com/MAA1999/M9
       <li>在弹出的窗口中，你可以看到处理器的信息。</li>
     </ol>
     <ul>
-      <li>若使用 Intel X86 处理器，请下载 <code>M9A-macos-x86_64-vXXX.tar.gz</code></li>
-      <li>若使用 Apple Silicon 系列如：M1、M2 等 ARM 架构处理器，请下载 <code>M9A-macos-aarch64-vXXX.tar.gz</code></li>
+      <li>若使用 Intel X86 处理器，请下载 <code>M9A-macos-x86_64-vXXX-MXU.dmg</code></li>
+      <li>若使用 Apple Silicon 系列如：M1、M2 等 ARM 架构处理器，请下载 <code>M9A-macos-aarch64-vXXX-MXU.dmg</code></li>
+      <li>dmg 里是 <code>M9A.app</code>（MXU 图形界面），拖进「应用程序」即可；MFAA 图形界面仍提供 <code>.tar.gz</code> 压缩包</li>
     </ul>
   </blockquote>
 </details>
@@ -269,6 +270,16 @@ M9A 支持主流模拟器与PC端，但您需要设置模拟器与PC端分辨率
     </li>
     <li>
       <details>
+        <summary>步骤0</summary>
+          <ol>
+            <li>打开后，选择选项3切换服务器：EN（国际服）或 JP（日服）</li>
+            <li>当前服务器显示在菜单顶部</li>
+          </ol>
+          <img src="/images/zh-cn/newbie-init-script-step1.webp" alt="步骤0">
+      </details>
+    </li>
+    <li>
+      <details>
         <summary>步骤1</summary>
           <ol>
             <li>打开后在命令行输入1</li>
@@ -314,53 +325,43 @@ M9A 支持通过命令行（MaaPiCli）和图形化界面（MFAAvalonia/MXU）�
 
 #### macOS
 
+M9A 的 macOS 包以 dmg 分发，里面是 `M9A.app`（MXU 图形界面）。
+
+1. 双击打开下载的 `M9A-macos-<架构>-vXXX-MXU.dmg`，把 `M9A.app` 拖进「应用程序」文件夹。
+2. 在「启动台」或「应用程序」里双击 `M9A.app` 启动。
+
 <details>
-  <summary>详情</summary>
+  <summary>使用 MFAAvalonia 或命令行（MaaPiCli）</summary>
   <p></p>
   <blockquote>
 
-1. 打开终端，解压分发的压缩包：
+MFAA 图形界面与 MaaPiCli 仍以 `.tar.gz` 分发，解压后按原方式运行：
 
-    **选项1：解压到系统目录（需要管理员权限）**
+```shell
+mkdir -p ~/M9A
+tar -xzf M9A-macos-<架构>-vXXX-MFAA.tar.gz -C ~/M9A
+cd ~/M9A
+./m9a
+```
 
-    ```shell
-    sudo mkdir -p /usr/local/bin/M9A
-    sudo tar -xzf <下载的M9A压缩包路径> -C /usr/local/bin/M9A
-    ```
+  </blockquote>
+</details>
 
-    **选项2：解压到用户目录（推荐，无需sudo）**
+<details>
+  <summary>Gatekeeper 安全提示处理</summary>
+  <p></p>
+  <blockquote>
 
-    ```shell
-    mkdir -p ~/M9A
-    tar -xzf <下载的M9A压缩包路径> -C ~/M9A
-    ```
-
-2. 进入解压目录并运行程序：
-
-    ```shell
-    cd /usr/local/bin/M9A
-    ./M9A
-    ```
-
-若想使用**图形操作页面**请按第二步操作，执行 `M9A` 程序即可。
-
-⚠️Gatekeeper 安全提示处理：
-
-在 macOS 10.15 (Catalina) 及更高版本中，Gatekeeper 可能会阻止运行未签名的应用程序。  
+在 macOS 10.15 (Catalina) 及更高版本中，Gatekeeper 可能会阻止运行 ad-hoc 签名（未公证）的应用程序。  
 如果遇到"无法打开，因为无法验证开发者"等错误，请选择以下任一方案:
 
 ```shell
-# 方案1：以 M9A 为例，移除隔离属性（推荐，以实际路径为准）
-sudo xattr -rd com.apple.quarantine /usr/local/bin/M9A/M9A
-# 或用户目录版本：xattr -rd com.apple.quarantine ~/M9A/M9A
+# 方案1：移除隔离属性（推荐，以实际路径为准）
+sudo xattr -rd com.apple.quarantine /Applications/M9A.app
 
-# 方案2：添加到 Gatekeeper 白名单
-sudo spctl --add /usr/local/bin/M9A/M9A
-# 或用户目录版本：spctl --add ~/M9A/M9A
+# 方案2：在「访达」里右键 M9A.app → 打开，再在弹窗里点「打开」
 
-# 方案3：一次性处理整个目录
-sudo xattr -rd com.apple.quarantine /usr/local/bin/M9A/*
-# 或用户目录版本：xattr -rd com.apple.quarantine ~/M9A/*
+# 方案3：系统设置 → 隐私与安全性 → 仍要打开
 ```
 
   </blockquote>
@@ -368,7 +369,20 @@ sudo xattr -rd com.apple.quarantine /usr/local/bin/M9A/*
 
 #### Linux
 
-同macOS，下载对应版本的压缩包，解压后运行 `M9A` 即可。
+同 Windows，下载对应版本的压缩包，解压后运行 `M9A` 即可。
+
+#### Android
+
+从 [Releases](https://github.com/MAA1999/M9A/releases) 下载对应架构的 APK 安装：真机选 `arm64-v8a`，x86 模拟器选 `x86_64`，不确定请选 `universal`。
+
+1. 首次启动时授予**通知权限**并加入**电池白名单**：后台挂机、定时触发与运行进度通知都依赖这些权限。
+2. 选择 Shizuku 或 root 完成授权，并等待服务连接。Shizuku 需另行安装并启动：Android 11 及以上可在设备上通过无线调试直接启动，更低版本（无 root 时）需要一台电脑通过 ADB 启动，详见 [Shizuku 官方文档](https://shizuku.rikka.app/zh-hans/)。
+3. 首次启动会自动解包任务资源。
+4. 在应用内选择服务器、勾选任务后开始运行，无需配置 ADB 连接。
+
+> [!NOTE]
+>
+> 任务跑在应用创建的**虚拟屏**上（后台模式），挂机期间手机可正常使用、可熄屏，分辨率在应用内选择（720P / 1080P）；也可切换**前台模式**直接操作当前屏幕。
 
 ---
 
@@ -669,26 +683,6 @@ Mac 用户使用 PlayCover 时，在连接区域的**控制器类型**中选择 
 ---
 
 #### 配置文件
-
-##### pip 配置
-
-M9A 支持通过 `config/pip_config.json` 文件配置 pip 安装相关设置。一般情况下，您无需修改此文件，除非您有特殊需求。
-
-  <details>
-    <summary>config/pip_config.json 示例</summary>
-    <p></p>
-    <blockquote>
-
-```jsonc
-{
-    "enable_pip_install": true, // 是否启用 pip 安装，默认 true
-    "mirror": "https://pypi.tuna.tsinghua.edu.cn/simple", // 镜像源
-    "backup_mirror": "https://mirrors.ustc.edu.cn/pypi/simple", // 备用镜像源
-}
-```
-
-  </blockquote>
-  </details>
 
 ##### 资源热更配置
 

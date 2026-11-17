@@ -19,30 +19,42 @@ jobs:
           ref: ${{ github.event.client_payload.tag || github.ref || 'main' }}
           fetch-depth: 1
 
-      - name: Read MaaFramework version from maa-project.json
+      - name: Read MaaFramework selector from maa-project.json
         id: maafw
         run: |
           channel=$(python3 -c "import json; print(json.load(open('maa-project.json'))['maafw']['channel'])")
+          version=$(python3 -c "import json; print(json.load(open('maa-project.json'))['maafw'].get('version', ''))")
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Trigger m9a-cli build
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.DISPATCH_TOKEN }}
           script: |
             const tag = context.payload.client_payload?.tag ?? context.ref ?? 'main'
-            const rawVersion = '${{ steps.maafw.outputs.channel }}'
-            const resolvedVersion = rawVersion === 'latest' ? '' : rawVersion
+            const channel = '${{ steps.maafw.outputs.channel }}'
+            const version = '${{ steps.maafw.outputs.version }}'
+            const isPrerelease = tag.includes('-')
             await github.rest.repos.createDispatchEvent({
               owner: 'MAA1999',
               repo: 'm9a-cli',
               event_type: 'm9a-release',
               client_payload: {
                 tag: tag,
-                maa_framework_version: resolvedVersion,
+                maa_framework_channel: channel,
+                maa_framework_version: version,
                 source_repo: 'MAA1999/M9A',
                 source_ref: tag,
                 source_sha: context.sha,
+                is_prerelease: isPrerelease,
               }
             });
-            console.log('Dispatched m9a-release to MAA1999/m9a-cli with tag:', tag, 'maafw:', resolvedVersion || '(latest)');
+            console.log(
+              'Dispatched m9a-release to MAA1999/m9a-cli with tag:',
+              tag,
+              'prerelease:',
+              isPrerelease,
+              'maafw:',
+              version || channel,
+            );

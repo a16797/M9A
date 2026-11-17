@@ -2,19 +2,22 @@
     "task": [
         {
             "name": "每日心相（意志解析）",
+            "label": "$Task.Psychube",
             "entry": "Psychube",
+            "group": [
+                "daily"
+            ],
             "option": [
                 "双重解析加成作战",
                 "吃糖"
-            ],
-            "group": [
-                "daily"
             ]
         }
     ],
     "option": {
         "双重解析加成作战": {
             "type": "switch",
+            "label": "$Option.Psychube.DoubleAnalysisBattle",
+            "description": "$Option.Psychube.DoubleAnalysisBattle.desc",
             "cases": [
                 {
                     "name": "No",
@@ -28,11 +31,12 @@
                     "name": "Yes",
                     "pipeline_override": {}
                 }
-            ],
-            "description": "双重解析期间是否进行加成作战"
+            ]
         },
         "吃糖": {
             "type": "switch",
+            "label": "$Option.Psychube.ConsumeCandy",
+            "description": "$Option.Psychube.ConsumeCandy.desc",
             "cases": [
                 {
                     "name": "Yes",
@@ -40,6 +44,7 @@
                         "糖果有效期",
                         "自定义吃糖次数",
                         "连续吃糖",
+                        "允许体力溢出",
                         "关闭吃糖提示"
                     ]
                 },
@@ -60,16 +65,16 @@
                         }
                     }
                 }
-            ],
-            "description": "是否吃糖"
+            ]
         },
         "糖果有效期": {
-            "label": "有效期",
             "type": "select",
+            "label": "$Option.Psychube.CandyExpiry",
+            "description": "$Option.Psychube.CandyExpiry.desc",
             "cases": [
                 {
                     "name": "24h",
-                    "description": "24小时内过期的糖",
+                    "description": "$Option.Psychube.CandyExpiry.24h.desc",
                     "pipeline_override": {
                         "EatCandyStart": {
                             "attach": {
@@ -80,7 +85,7 @@
                 },
                 {
                     "name": "7d",
-                    "description": "7天内过期的糖",
+                    "description": "$Option.Psychube.CandyExpiry.7d.desc",
                     "pipeline_override": {
                         "EatCandyStart": {
                             "attach": {
@@ -91,7 +96,7 @@
                 },
                 {
                     "name": "14d",
-                    "description": "14天内过期的糖",
+                    "description": "$Option.Psychube.CandyExpiry.14d.desc",
                     "pipeline_override": {
                         "EatCandyStart": {
                             "attach": {
@@ -102,7 +107,8 @@
                 },
                 {
                     "name": "无限期",
-                    "description": "不会过期的糖",
+                    "label": "$Option.Psychube.CandyExpiry.Unlimited",
+                    "description": "$Option.Psychube.CandyExpiry.Unlimited.desc",
                     "pipeline_override": {
                         "EatCandyStart": {
                             "attach": {
@@ -111,11 +117,12 @@
                         }
                     }
                 }
-            ],
-            "description": "可以吃的糖果的有效期"
+            ]
         },
         "自定义吃糖次数": {
             "type": "switch",
+            "label": "$Option.Psychube.CustomCandyCount",
+            "description": "$Option.Psychube.CustomCandyCount.desc",
             "cases": [
                 {
                     "name": "No",
@@ -131,17 +138,18 @@
                         "吃糖次数"
                     ]
                 }
-            ],
-            "description": "关闭时，吃所有符合要求的糖"
+            ]
         },
         "吃糖次数": {
             "type": "input",
-            "label": "吃糖次数",
+            "label": "$Option.Psychube.CandyCount",
+            "description": "$Option.Psychube.CandyCount.desc",
             "inputs": [
                 {
                     "name": "吃糖次数",
-                    "pipeline_type": "int",
+                    "label": "$Option.Psychube.CandyCount.Count",
                     "default": "114514",
+                    "pipeline_type": "int",
                     "verify": "^(0|[1-9]\\d*)$"
                 }
             ],
@@ -149,11 +157,12 @@
                 "EatCandyStart": {
                     "max_hit": "{吃糖次数}"
                 }
-            },
-            "description": "注意小熊软糖(主线掉落5体力糖)会默认吃完，不会被计入该次数"
+            }
         },
         "连续吃糖": {
             "type": "switch",
+            "label": "$Option.Psychube.ContinuousCandy",
+            "description": "$Option.Psychube.ContinuousCandy.desc",
             "cases": [
                 {
                     "name": "Yes",
@@ -175,11 +184,39 @@
                         }
                     }
                 }
-            ],
-            "description": "开启后，每次进入吃糖界面尽可能多吃糖；关闭后，每次进入吃糖界面只吃一次糖"
+            ]
+        },
+        "允许体力溢出": {
+            "type": "switch",
+            "label": "$Option.Psychube.AllowApOverflow",
+            "description": "$Option.Psychube.AllowApOverflow.desc",
+            "cases": [
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "EatCandyStart": {
+                            "attach": {
+                                "allow_overflow": 0
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "EatCandyStart": {
+                            "attach": {
+                                "allow_overflow": 1
+                            }
+                        }
+                    }
+                }
+            ]
         },
         "关闭吃糖提示": {
             "type": "switch",
+            "label": "$Option.Psychube.DismissCandyPrompt",
+            "description": "$Option.Psychube.DismissCandyPrompt.desc",
             "cases": [
                 {
                     "name": "No",
@@ -197,8 +234,7 @@
                         }
                     }
                 }
-            ],
-            "description": "关闭吃糖时弹出的本日登录不再提醒的提示，关闭后可能导致多吃糖，请慎重选择！"
+            ]
         }
     }
 }

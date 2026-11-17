@@ -1,7 +1,7 @@
 from maa.agent.agent_server import AgentServer
 from maa.context import Context
 from maa.custom_action import CustomAction
-from utils import logger
+from utils.logger import logger
 from utils.params import parse_params
 
 
@@ -107,7 +107,7 @@ class ResetCount(CustomAction):
                 has_failure = True
                 continue
 
-            logger.info(f"ResetCount successfully cleared hit count: node={node_name}")
+            logger.debug(f"ResetCount successfully cleared hit count: node={node_name}")
 
         if has_failure and strict:
             logger.error("ResetCount failed to clear some nodes in strict mode")

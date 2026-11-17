@@ -7,9 +7,12 @@ RECO_MODULES = (
     "auto_promotion",
     "auto_trail",
     "combat",
+    "compare_numbers",
     "lucidscape",
     "syndrome_of_silence",
+    "sos_node_template",
     "critter_crash",
+    "huawei_close_ad",
 )
 
 

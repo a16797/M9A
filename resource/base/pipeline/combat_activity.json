@@ -40,6 +40,11 @@
             "Node.Action.Starting": "<span style=\"color:crimson;\">未能进入活动界面，请检查资源类型是否正确</span>"
         }
     },
+    "CombatActivityNoReRelease": {
+        "focus": {
+            "Node.Action.Starting": "当前未开放复刻活动，已跳过活动代币刷取"
+        }
+    },
     "FlagInActivityMain": {
         "recognition": {
             "type": "OCR",
@@ -181,7 +186,25 @@
                     815,
                     234
                 ],
-                "expected": "[012][0-9]"
+                "expected": "[012][0-9]",
+                "color_filter": "ActivityCombatStageNum_color_filter"
+            }
+        }
+    },
+    "ActivityCombatStageNum_color_filter": {
+        "recognition": {
+            "type": "ColorMatch",
+            "param": {
+                "lower": [
+                    173,
+                    167,
+                    151
+                ],
+                "upper": [
+                    205,
+                    203,
+                    199
+                ]
             }
         }
     },
@@ -205,6 +228,23 @@
                         "0",
                         ""
                     ]
+                ]
+            }
+        }
+    },
+    "ActivityCombatStageCost_color_filter": {
+        "recognition": {
+            "type": "ColorMatch",
+            "param": {
+                "lower": [
+                    149,
+                    159,
+                    167
+                ],
+                "upper": [
+                    245,
+                    237,
+                    227
                 ]
             }
         }
@@ -321,10 +361,32 @@
             }
         },
         "next": [
-            "ActivityRe_releaseChapter"
+            "ActivityRe_releaseChapter",
+            "[JumpBack]ActivityRe_releaseSwipeRight"
         ]
     },
+    "ActivityRe_releaseSwipeRight": {
+        "max_hit": 5,
+        "action": {
+            "type": "Swipe",
+            "param": {
+                "begin": [
+                    799,
+                    672,
+                    43,
+                    33
+                ],
+                "end": [
+                    581,
+                    672,
+                    44,
+                    33
+                ]
+            }
+        }
+    },
     "ActivityRe_releaseChapter": {
+        "max_hit": 5,
         "recognition": {
             "type": "Custom",
             "param": {
@@ -339,7 +401,8 @@
         },
         "post_delay": 3000,
         "next": [
-            "ActivityMainChapter"
+            "ActivityMainChapter",
+            "ActivityRe_releaseChapter"
         ],
         "on_error": [
             "ActivityRe_releaseChapterError"
@@ -347,7 +410,7 @@
     },
     "ActivityRe_releaseChapterError": {
         "focus": {
-            "Node.Action.Starting": "<span style=\"color:crimson;\">未识别到复刻活动章节，请检查资源类型是否正确</span>"
+            "Node.Action.Starting": "<span style=\"color:crimson;\">未识别到复刻活动章节：请检查资源类型是否正确，或活动数据是否已更新</span>"
         }
     },
     "ActivityLeftList": {
@@ -359,6 +422,20 @@
                     109,
                     240,
                     562
+                ],
+                "expected": "[\\s\\S]"
+            }
+        }
+    },
+    "ActivityDownList": {
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "roi": [
+                    7,
+                    473,
+                    1243,
+                    236
                 ],
                 "expected": "[\\s\\S]"
             }

@@ -51,24 +51,46 @@ body = """
 """
 
 footer = """
-{%- macro remote_url() -%}
-  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
-{%- endmacro -%}
-
 {%- set latest_version = "" -%}
 {%- for release in releases -%}
   {%- if release.version and latest_version == "" -%}
     {%- set_global latest_version = release.version -%}
   {%- endif -%}
 {%- endfor -%}
-
-{% if latest_version -%}
-**绝大部分用户请下载 [M9A-win-x86_64-{{ latest_version }}-MFAA.zip]({{ self::remote_url() }}/releases/download/{{ latest_version }}/M9A-win-x86_64-{{ latest_version }}-MFAA.zip) 或 [M9A-win-x86_64-{{ latest_version }}-MXU.zip]({{ self::remote_url() }}/releases/download/{{ latest_version }}/M9A-win-x86_64-{{ latest_version }}-MXU.zip)**
+{%- if latest_version -%}
+  {%- set_global ver = latest_version -%}
 {%- else -%}
-**绝大部分用户请下载 M9A-win-x86_64-vx.x.x-MFAA.zip 或 M9A-win-x86_64-vx.x.x-MXU.zip，没找到的请点 show all x assets**
+  {%- set_global ver = "v?.?.?" -%}
 {%- endif %}
 
-> MFAA = 图形界面版（使用接近MAA方舟） | MXU = 图形界面版（MaaEnd同款）
+{%- macro asset(prefix, suffix, label, ver, tag) -%}
+  {%- set filename = prefix ~ ver ~ suffix -%}
+  {%- if tag -%}
+    [{{ label }}](https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}/releases/download/{{ tag }}/{{ filename }})
+  {%- else -%}
+    {{ filename }}
+  {%- endif -%}
+{%- endmacro %}
+
+---
+
+### 下载哪个包
+
+| 包 | 适用 |
+| --- | --- |
+| {{ self::asset(prefix="M9A-win-x86_64-", suffix="-MFAA.zip", label="M9A-MFAA", ver=ver, tag=latest_version) }}（推荐） | Windows x64，绝大部分用户 |
+| {{ self::asset(prefix="M9A-win-x86_64-", suffix="-MXU.zip", label="M9A-MXU", ver=ver, tag=latest_version) }} | Windows x64（MaaEnd 同款界面） |
+| {{ self::asset(prefix="M9A-win-aarch64-", suffix="-MFAA.zip", label="MFAA", ver=ver, tag=latest_version) }} / {{ self::asset(prefix="M9A-win-aarch64-", suffix="-MXU.zip", label="MXU", ver=ver, tag=latest_version) }} | Windows on ARM |
+| {{ self::asset(prefix="M9A-linux-x86_64-", suffix="-MFAA.tar.gz", label="M9A-MFAA", ver=ver, tag=latest_version) }} / {{ self::asset(prefix="M9A-linux-x86_64-", suffix="-MXU.tar.gz", label="M9A-MXU", ver=ver, tag=latest_version) }} | Linux x64 |
+| {{ self::asset(prefix="M9A-linux-aarch64-", suffix="-MFAA.tar.gz", label="M9A-MFAA", ver=ver, tag=latest_version) }} /（无 MXU 包） | Linux ARM64 |
+| {{ self::asset(prefix="M9A-macos-x86_64-", suffix="-MFAA.tar.gz", label="M9A-MFAA", ver=ver, tag=latest_version) }} / {{ self::asset(prefix="M9A-macos-x86_64-", suffix="-MXU.dmg", label="M9A-MXU", ver=ver, tag=latest_version) }} | macOS（Intel 芯片） |
+| {{ self::asset(prefix="M9A-macos-aarch64-", suffix="-MFAA.tar.gz", label="M9A-MFAA", ver=ver, tag=latest_version) }} / {{ self::asset(prefix="M9A-macos-aarch64-", suffix="-MXU.dmg", label="M9A-MXU", ver=ver, tag=latest_version) }} | macOS（Apple Silicon） |
+| {{ self::asset(prefix="M9A-android-arm64-v8a-", suffix=".apk", label="M9A-android-arm64-v8a.apk", ver=ver, tag=latest_version) }}（推荐） | Android 真机（ARM64），体积约为 universal 的一半 |
+| {{ self::asset(prefix="M9A-android-universal-", suffix=".apk", label="M9A-android-universal.apk", ver=ver, tag=latest_version) }} | Android 双架构通用包，真机 / 模拟器都能装，不确定选这个 |
+| {{ self::asset(prefix="M9A-android-x86_64-", suffix=".apk", label="M9A-android-x86_64.apk", ver=ver, tag=latest_version) }} | Android 模拟器等 x86 环境（Windows 上的蓝叠 / MuMu / 雷电等） |
+{%- if not latest_version %}
+以上版本号为占位 v?.?.?，release 页没找到对应包请点 show all assets
+{%- endif %}
 
 [已有 Mirror酱 CDK？点击前往高速下载](https://mirrorchyan.com/zh/projects?rid=M9A&source=m9agh-release)
 
@@ -97,6 +119,3 @@ commit_parsers = [
     { message = "^[Rr]evert", group = "<!-- 11 -->撤销 | Reverts" },
 ]
 sort_commits = "oldest"
-
-[git.github]
-commits = true

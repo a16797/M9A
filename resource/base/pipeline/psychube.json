@@ -65,9 +65,18 @@
             }
         },
         "action": {
-            "type": "Click"
+            "type": "Click",
+            "param": {
+                "target_offset": [
+                    52,
+                    15,
+                    -106,
+                    -25
+                ]
+            }
         },
         "next": [
+            "EquipmentOverflowDissociate",
             "PsychubeFlagInReplayReady",
             "[JumpBack]PsychubeSwitchToReplay",
             "[JumpBack]CombatEntering"
@@ -168,6 +177,7 @@
         },
         "next": [
             "PsychubeFlagInReadyForAction",
+            "HomeFlag",
             "PsychubeVictory",
             "[JumpBack]BackButton",
             "[JumpBack]HomeLoading"

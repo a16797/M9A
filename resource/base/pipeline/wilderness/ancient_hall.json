@@ -10,9 +10,9 @@
             "type": "OCR",
             "param": {
                 "roi": [
-                    1168,
+                    1158,
                     148,
-                    86,
+                    109,
                     24
                 ],
                 "expected": "古厅定位",
@@ -43,7 +43,8 @@
         "next": [
             "AncientHallFlag",
             "[JumpBack]ClickAncientHall"
-        ]
+        ],
+        "on_error": ["BackButton"]
     },
     "AncientHallFlag": {
         "recognition": {

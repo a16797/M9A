@@ -6,12 +6,15 @@ Manifest 缓存检查模块
 """
 
 import json
+import os
+import tempfile
+from pathlib import Path
 from typing import Any
 
 import requests  # pyright: ignore[reportMissingModuleSource]
 
-from . import logger
 from .http_session import create_no_proxy_session
+from .logger import logger
 from .runtime_paths import get_runtime_paths
 
 # 配置
@@ -19,11 +22,16 @@ MANIFEST_URL = "https://api.1999.fan/api/manifest.json"
 API_BASE_URL = "https://api.1999.fan/api"
 REQUEST_TIMEOUT = 5
 
+# manifest 也走 no-cache：命中 CDN 旧清单会让"是否需要更新"的判断失真（旧的 updated
+# 会导致直接判定无更新、静默漏更），与 resource_updater.NO_CACHE_HEADERS 保持一致
+NO_CACHE_HEADERS = {"Cache-Control": "no-cache", "Pragma": "no-cache"}
+
 # 不使用系统代理（国内服务器直连更快）
 session = create_no_proxy_session()
 
 # 忽略的目录（不需要热更新）
 IGNORED_DIRS = {"images"}
+IGNORED_MANIFEST_PREFIXES = ("images/", "resource/data/")
 
 
 def _load_cache() -> dict[str, Any]:
@@ -41,7 +49,9 @@ def _load_cache() -> dict[str, Any]:
         }
     """
     default = {"root_updated": 0, "manifests": {}}
-    cache_file = get_runtime_paths().manifest_cache_file
+    # 读侧走覆盖层：包内随版发布的基线缓存在数据目录还没有缓存时可兜底，
+    # 数据目录里的缓存更新后用数据目录那份
+    cache_file = get_runtime_paths().resolve("data/manifest_cache.json")
     if not cache_file.exists():
         return default
     try:
@@ -55,23 +65,38 @@ def _load_cache() -> dict[str, Any]:
         return default
 
 
-def _save_cache(cache: dict[str, Any]):
-    """保存缓存到本地"""
+def _save_cache(cache: dict[str, Any]) -> None:
+    """将缓存原子写入本地，避免中断时留下半截 JSON。"""
     cache_file = get_runtime_paths().manifest_cache_file
+    temp_path: Path | None = None
     try:
         cache_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(cache_file, "w", encoding="utf-8") as f:
-            json.dump(cache, f, indent=2, ensure_ascii=False)
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=cache_file.parent,
+            prefix=f".{cache_file.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp_file:
+            temp_path = Path(temp_file.name)
+            json.dump(cache, temp_file, indent=2, ensure_ascii=False)
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+        os.replace(temp_path, cache_file)
     except Exception as e:
         logger.debug(f"保存 manifest 缓存失败: {e}")
+    finally:
+        if temp_path is not None:
+            try:
+                temp_path.unlink(missing_ok=True)
+            except OSError as e:
+                logger.debug(f"清理 manifest 缓存临时文件失败: {temp_path}: {e}")
 
 
 def _is_ignored_path(manifest_path: str) -> bool:
     """检查 manifest 路径是否在忽略目录下"""
-    for ignored in IGNORED_DIRS:
-        if manifest_path.startswith(f"{ignored}/") or manifest_path == f"{ignored}/manifest.json":
-            return True
-    return False
+    return manifest_path.startswith(IGNORED_MANIFEST_PREFIXES)
 
 
 def _collect_updated_manifests(
@@ -99,7 +124,7 @@ def _collect_updated_manifests(
 
     try:
         url = f"{API_BASE_URL}/{manifest_path}"
-        response = session.get(url, timeout=REQUEST_TIMEOUT)
+        response = session.get(url, timeout=REQUEST_TIMEOUT, headers=NO_CACHE_HEADERS)
         response.raise_for_status()
         manifest = response.json()
 
@@ -115,15 +140,18 @@ def _collect_updated_manifests(
                 logger.debug(f"manifest 需要更新: {manifest_path} ({local_updated} → {remote_updated})")
 
             # 递归检查子目录
+            children_succeeded = True
             for dir_info in manifest.get("directories", []):
                 sub_manifest = dir_info.get("manifest", "")
                 if sub_manifest:
-                    _collect_updated_manifests(
+                    child_succeeded = _collect_updated_manifests(
                         sub_manifest,
                         local_manifests,
                         collected_manifests,
                         updated_manifests,
                     )
+                    children_succeeded = child_succeeded and children_succeeded
+            return children_succeeded
         else:
             logger.debug(f"manifest 无更新: {manifest_path} (updated={remote_updated})")
             # 即使没更新，也要收集子 manifest 的时间戳（用于保存缓存）
@@ -171,7 +199,7 @@ def check_manifest_updates() -> dict[str, Any]:
 
     try:
         # 请求远程根 manifest
-        response = session.get(MANIFEST_URL, timeout=REQUEST_TIMEOUT)
+        response = session.get(MANIFEST_URL, timeout=REQUEST_TIMEOUT, headers=NO_CACHE_HEADERS)
         response.raise_for_status()
         root_manifest = response.json()
 
@@ -189,6 +217,7 @@ def check_manifest_updates() -> dict[str, Any]:
             return result
 
         # 递归检查各子目录
+        manifests_succeeded = True
         for dir_info in root_manifest.get("directories", []):
             dir_name = dir_info["name"]
             sub_manifest = dir_info.get("manifest", "")
@@ -198,12 +227,19 @@ def check_manifest_updates() -> dict[str, Any]:
                 continue
 
             if sub_manifest:
-                _collect_updated_manifests(
+                manifest_succeeded = _collect_updated_manifests(
                     sub_manifest,
                     local_manifests,
                     result["collected_manifests"],
                     result["updated_manifests"],
                 )
+                manifests_succeeded = manifest_succeeded and manifests_succeeded
+
+        if not manifests_succeeded:
+            result["error"] = "部分 manifest 获取失败"
+            result["has_any_update"] = True
+            logger.debug(result["error"])
+            return result
 
         result["success"] = True
         result["has_any_update"] = len(result["updated_manifests"]) > 0

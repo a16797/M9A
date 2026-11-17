@@ -53,13 +53,13 @@
             "type": "Click"
         },
         "post_wait_freezes": {
+            "time": 100,
             "target": [
                 50,
                 509,
                 56,
                 54
-            ],
-            "time": 100
+            ]
         },
         "next": [
             "switch_menu_main",
@@ -187,6 +187,31 @@
                                                     258,
                                                     10,
                                                     9
+                                                ],
+                                                "lower": [
+                                                    191,
+                                                    191,
+                                                    185
+                                                ],
+                                                "upper": [
+                                                    211,
+                                                    211,
+                                                    205
+                                                ],
+                                                "connected": true,
+                                                "count": 15
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "recognition": {
+                                            "type": "ColorMatch",
+                                            "param": {
+                                                "roi": [
+                                                    46,
+                                                    238,
+                                                    11,
+                                                    10
                                                 ],
                                                 "lower": [
                                                     191,

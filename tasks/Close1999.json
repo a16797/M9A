@@ -2,12 +2,13 @@
     "task": [
         {
             "name": "关闭游戏",
+            "label": "$Task.Close1999",
             "entry": "Close1999",
-            "controller": [
-                "ADB"
-            ],
             "group": [
                 "daily"
+            ],
+            "controller": [
+                "ADB"
             ]
         }
     ]

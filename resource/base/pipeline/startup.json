@@ -31,6 +31,8 @@
         "desc": "返回主界面（专供任务开始前使用）",
         "max_hit": 2,
         "next": [
+            "EquipmentOverflowDissociate",
+            "[JumpBack]StoryIntroductionBack",
             "[JumpBack]Confirm",
             "HomeFlagCloseReturnMain",
             "[JumpBack]HomeButton",
@@ -48,9 +50,77 @@
             "[JumpBack]Downloading",
             "[JumpBack]CandyCancel",
             "[JumpBack]ClickBlank",
-            "[JumpBack]SkipButton",
-            "[JumpBack]ClickHomeCount"
+            "[JumpBack]SkipButton"
         ]
+    },
+    "EquipmentOverflowDissociate": {
+        "desc": "心相仓库已满时直接前往解离",
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "roi": [
+                    774,
+                    406,
+                    61,
+                    32
+                ],
+                "expected": "解离",
+                "only_rec": true
+            }
+        },
+        "action": {
+            "type": "Click"
+        },
+        "post_wait_freezes": {
+            "time": 300,
+            "target": [
+                0,
+                250,
+                1280,
+                240
+            ]
+        },
+        "next": [
+            "Dissociation4StarFlag",
+            "[JumpBack]Dissociation4StarSelect",
+            "[JumpBack]Dissociation3StarSelect"
+        ]
+    },
+    "StoryIntroductionBack": {
+        "desc": "点击弹层外退出意外打开的剧情介绍",
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "roi": [
+                    920,
+                    400,
+                    115,
+                    55
+                ],
+                "expected": "开始剧情",
+                "only_rec": true
+            }
+        },
+        "action": {
+            "type": "Click",
+            "param": {
+                "target": [
+                    15,
+                    5,
+                    65,
+                    65
+                ]
+            }
+        },
+        "post_wait_freezes": {
+            "time": 300,
+            "target": [
+                0,
+                0,
+                400,
+                150
+            ]
+        }
     },
     "StartGame": {
         "recognition": {
@@ -187,7 +257,8 @@
                 271,
                 259,
                 140
-            ]
+            ],
+            "timeout": 5000
         }
     },
     "HomeLoading_wait": {
@@ -227,9 +298,6 @@
                     }
                 ]
             }
-        },
-        "action": {
-            "type": "Click"
         },
         "next": [
             "[JumpBack]Confirm",
@@ -418,7 +486,8 @@
         },
         "post_wait_freezes": {
             "time": 300,
-            "target": "HomeLoading_wait"
+            "target": "HomeLoading_wait",
+            "timeout": 5000
         }
     },
     "HomeFlag": {
@@ -562,7 +631,8 @@
                     138
                 ],
                 "template": [
-                    "StartUp/BackButton.png"
+                    "StartUp/BackButton.png",
+                    "StartUp/BackButton_2.png"
                 ],
                 "green_mask": true
             }
@@ -582,7 +652,8 @@
                     138
                 ],
                 "template": [
-                    "StartUp/BackButton.png"
+                    "StartUp/BackButton.png",
+                    "StartUp/BackButton_2.png"
                 ],
                 "green_mask": true
             }
@@ -640,15 +711,38 @@
     "Reward": {
         "desc": "防卡日历",
         "recognition": {
-            "type": "TemplateMatch",
+            "type": "Or",
             "param": {
-                "roi": [
-                    419,
-                    90,
-                    297,
-                    148
-                ],
-                "template": "StartUp/Rewards/"
+                "any_of": [
+                    {
+                        "recognition": {
+                            "type": "TemplateMatch",
+                            "param": {
+                                "roi": [
+                                    419,
+                                    90,
+                                    297,
+                                    148
+                                ],
+                                "template": "StartUp/Rewards/"
+                            }
+                        }
+                    },
+                    {
+                        "recognition": {
+                            "type": "OCR",
+                            "param": {
+                                "roi": [
+                                    458,
+                                    124,
+                                    211,
+                                    73
+                                ],
+                                "expected": "^REWARD$"
+                            }
+                        }
+                    }
+                ]
             }
         },
         "action": {
@@ -659,7 +753,8 @@
         },
         "post_wait_freezes": {
             "time": 300,
-            "target": "HomeLoading_wait"
+            "target": "HomeLoading_wait",
+            "timeout": 5000
         }
     },
     "AccumulatedSignIn": {
@@ -721,7 +816,8 @@
         "post_delay": 3000,
         "next": [
             "SignInReward",
-            "ClosePage"
+            "ClosePage",
+            "[JumpBack]ObtainedAwards"
         ]
     },
     "ClosePage": {
@@ -780,7 +876,7 @@
                                     155
                                 ],
                                 "template": "StartUp/SignInReward.png",
-                                "threshold": 0.88
+                                "threshold": 0.85
                             }
                         }
                     },

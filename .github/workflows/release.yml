@@ -20,6 +20,8 @@ jobs:
             runtime_os: win
             runtime_arch: x64
             drop_os: windows
+            drop_core_supported: true
+            drop_core_smoke_import: true
             ext: zip
           - os: windows-11-arm
             artifact_os: win
@@ -27,6 +29,9 @@ jobs:
             runtime_os: win
             runtime_arch: arm64
             drop_os: windows
+            # drop_core publishes no Windows ARM64 asset; combat falls back to the non-native path.
+            drop_core_supported: false
+            drop_core_smoke_import: false
             ext: zip
           - os: ubuntu-latest
             artifact_os: linux
@@ -34,13 +39,20 @@ jobs:
             runtime_os: linux
             runtime_arch: x64
             drop_os: linux
+            drop_core_supported: true
+            # The runtime now holds a bundled interpreter, so the import smoke runs against it.
+            drop_core_smoke_import: true
             ext: tar.gz
-          - os: ubuntu-latest
+          # Native arm64 runner: the aarch64 interpreter and its wheels cannot be executed
+          # (or installed by executing it) on an x86_64 host.
+          - os: ubuntu-24.04-arm
             artifact_os: linux
             arch: aarch64
             runtime_os: linux
             runtime_arch: arm64
             drop_os: linux
+            drop_core_supported: true
+            drop_core_smoke_import: true
             ext: tar.gz
           - os: macos-15-intel
             artifact_os: macos
@@ -48,6 +60,8 @@ jobs:
             runtime_os: osx
             runtime_arch: x64
             drop_os: darwin
+            drop_core_supported: true
+            drop_core_smoke_import: true
             ext: tar.gz
           - os: macos-latest
             artifact_os: macos
@@ -55,28 +69,37 @@ jobs:
             runtime_os: osx
             runtime_arch: arm64
             drop_os: darwin
+            drop_core_supported: true
+            drop_core_smoke_import: true
             ext: tar.gz
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: hashFiles('pyproject.toml') != ''
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v8.3.1
+      - uses: astral-sh/setup-uv@v10.2.0
         if: hashFiles('pyproject.toml') != ''
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 22
           cache: pnpm
-      - run: node tools/check-project.mjs
       - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level high
       - run: pnpm check
       - run: pnpm check:py
         if: hashFiles('pyproject.toml') != ''
+      # Dependabot 的 uv 更新只动 uv.lock，而打出的桌面包装的是导出的 requirements.txt：
+      # 先按 lock 重导出，合并锁文件更新后不必再手工跑 --update python-deps 才能发版
+      - name: Re-export Python requirements from uv.lock
+        if: hashFiles('pyproject.toml') != ''
+        run: >-
+          uv export --frozen --format requirements-txt --no-hashes --no-emit-project
+          --no-group dev --no-annotate --output-file requirements.txt
       - run: pnpm release:dry-run
         if: github.event_name == 'workflow_dispatch'
       - run: pnpm sync:runtime
@@ -85,16 +108,42 @@ jobs:
           CREATE_MAA_PROJECT_RUNTIME_PLATFORM: ${{ matrix.runtime_os }}-${{ matrix.runtime_arch }}
           GITHUB_TOKEN: ${{ github.token }}
       - name: Download drop_core
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' && matrix.drop_core_supported
         shell: bash
         env:
           PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
-          python tools/ci/download_drop_core.py --os "${{ matrix.drop_os }}" --arch "${{ matrix.runtime_arch }}" || echo "[WARN] drop_core download skipped"
+          args=(--os "${{ matrix.drop_os }}" --arch "${{ matrix.runtime_arch }}")
+          if [[ "${{ matrix.drop_core_smoke_import }}" == "true" ]]; then
+            args+=(--smoke-import)
+          fi
+          python tools/ci/download_drop_core.py "${args[@]}"
+      - name: Note unsupported drop_core target
+        if: github.event_name != 'workflow_dispatch' && matrix.drop_core_supported == false
+        shell: bash
+        run: echo "[INFO] drop_core is not published for ${{ matrix.drop_os }}-${{ matrix.runtime_arch }}"
       - run: node tools/build-release.mjs
         if: github.event_name != 'workflow_dispatch'
         env:
           CREATE_MAA_PROJECT_RUNTIME_PLATFORM: ${{ matrix.runtime_os }}-${{ matrix.runtime_arch }}
+      - name: Verify packaged drop_core
+        if: github.event_name != 'workflow_dispatch' && matrix.drop_core_supported
+        shell: bash
+        run: |
+          shopt -s nullglob
+          package_dirs=(dist/package-*/)
+          if (( ${#package_dirs[@]} == 0 )); then
+            echo "[ERR] no release packages were generated for a supported drop_core target"
+            exit 1
+          fi
+          for pkg_dir in "${package_dirs[@]}"; do
+            modules=("$pkg_dir"/agent/libs/drop_core*.pyd "$pkg_dir"/agent/libs/drop_core*.so)
+            if (( ${#modules[@]} != 1 )); then
+              echo "[ERR] expected exactly one drop_core module in $pkg_dir, found ${#modules[@]}"
+              exit 1
+            fi
+            echo "[OK] packaged drop_core: ${modules[0]}"
+          done
       - name: Generate manifest cache
         if: github.event_name != 'workflow_dispatch'
         shell: bash
@@ -116,10 +165,12 @@ jobs:
 
             if [[ "${{ matrix.runtime_os }}" == "win" ]]; then
               if [ ! -f rcedit.exe ]; then
-                curl -fsSL https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe -o rcedit.exe
+                rcedit_version="2.0.0"
+                curl -fsSL "https://github.com/electron/rcedit/releases/download/v${rcedit_version}/rcedit-x64.exe" -o rcedit.exe
               fi
-              exe="$pkg_dir/m9a.exe"
-              if [[ -f "$exe" ]]; then
+              echo "3e7801db1a5edbec91b49a24a094aad776cb4515488ea5a4ca2289c400eade2a  rcedit.exe" | sha256sum --check --strict
+              exe="$(find "$pkg_dir" -maxdepth 1 -type f -name '*.exe' | head -n 1)"
+              if [[ -n "$exe" ]]; then
                 ./rcedit.exe "$exe" --set-icon logo.ico
                 echo "[OK] Applied Windows executable icon: $exe ($gui)"
               else
@@ -132,32 +183,74 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          for pkg_dir in dist/package-*; do
-            [ -d "$pkg_dir" ] || continue
+          shopt -s nullglob
+          package_dirs=(dist/package-*/)
+          if (( ${#package_dirs[@]} == 0 )); then
+            echo "[ERR] no release packages were generated"
+            exit 1
+          fi
+          for pkg_dir in "${package_dirs[@]}"; do
             gui=$(basename "$pkg_dir" | sed 's/^package-//')
-            gui_upper=$(echo "$gui" | tr '[:lower:]' '[:upper:]')
-            archive="M9A-${{ matrix.artifact_os }}-${{ matrix.arch }}-${GITHUB_REF_NAME}-${gui_upper}.${{ matrix.ext }}"
-            (
-              cd "$pkg_dir"
-              if [[ "${{ matrix.ext }}" == "zip" ]]; then
-                7z a "../$archive" .
-              else
-                tar -czf "../$archive" .
-                tar -tzvf "../$archive" > "../$archive.manifest"
-                if ! awk '$1 ~ /^-/ && $0 ~ /(^|\/)(m9a|MFAAvalonia|mxu|MaaPiCli|MaaAgentServer|maa-cli|python3?)$/ && $1 !~ /^-..x/ { print; bad=1 } END { exit bad }' "../$archive.manifest"; then
-                  echo "[ERR] Unix archive is missing executable permission metadata"
-                  exit 1
+            # macOS runners resolve `shell: bash` to the system bash 3.2, which predates the
+            # parameter-expansion case modifiers, so uppercase through tr instead.
+            gui_upper="$(printf '%s' "$gui" | tr '[:lower:]' '[:upper:]')"
+            # macOS MXU ships as M9A.app inside a dmg, the shape MaaEnd publishes; MFAA keeps the
+            # plain archive because it is a bare GUI binary.
+            ext="${{ matrix.ext }}"
+            if [[ "${{ matrix.artifact_os }}" == "macos" && "$gui" == "mxu" ]]; then
+              ext="dmg"
+            fi
+            archive="M9A-${{ matrix.artifact_os }}-${{ matrix.arch }}-${GITHUB_REF_NAME}-${gui_upper}.$ext"
+            if [[ "$ext" == "dmg" ]]; then
+              node tools/macos-app-bundle.mjs \
+                --package "$pkg_dir" \
+                --app dist/M9A.app \
+                --version "$GITHUB_REF_NAME" \
+                --icon logo.ico \
+                --dmg "dist/$archive"
+              rm -rf dist/M9A.app
+            else
+              (
+                cd "$pkg_dir"
+                if [[ "$ext" == "zip" ]]; then
+                  7z a "../$archive" .
+                else
+                  tar -czf "../$archive" .
+                  tar -tzvf "../$archive" > "../$archive.manifest"
+                  if ! awk '$1 ~ /^-/ && $0 ~ /(^|\/)(m9a|MFAAvalonia|mxu|MaaPiCli|MaaAgentServer|maa-cli|python3?)$/ && $1 !~ /^-..x/ { print; bad=1 } END { exit bad }' "../$archive.manifest"; then
+                    echo "[ERR] Unix archive is missing executable permission metadata"
+                    exit 1
+                  fi
+                  echo "[OK] Unix archive executable metadata smoke passed"
                 fi
-                echo "[OK] Unix archive executable metadata smoke passed"
-              fi
-            )
+              )
+            fi
             rm -rf "$pkg_dir"
+          done
+          # 断言该平台必须产出的资产集合：MFAA 恒有；MXU 仅在 linux-arm64 上没有可用运行时，
+          # 是唯一合法的缺失。否则缺失的 GUI 运行时会被当作完整 Release 发布出去。
+          expected_guis=(MFAA)
+          if [[ "${{ matrix.runtime_os }}-${{ matrix.runtime_arch }}" != "linux-arm64" ]]; then
+            expected_guis+=(MXU)
+          fi
+          for gui_upper in "${expected_guis[@]}"; do
+            ext="${{ matrix.ext }}"
+            if [[ "${{ matrix.artifact_os }}" == "macos" && "$gui_upper" == "MXU" ]]; then
+              ext="dmg"
+            fi
+            archive="M9A-${{ matrix.artifact_os }}-${{ matrix.arch }}-${GITHUB_REF_NAME}-${gui_upper}.$ext"
+            if [[ ! -f "dist/$archive" ]]; then
+              echo "[ERR] expected release asset was not produced: $archive"
+              exit 1
+            fi
+            echo "[OK] packaged release asset: $archive"
           done
       - uses: actions/upload-artifact@v7
         if: github.event_name != 'workflow_dispatch'
         with:
           name: ${{ matrix.artifact_os }}-${{ matrix.arch }}
           path: dist/*
+          if-no-files-found: error
 
   git_cliff:
     name: Generate release notes
@@ -176,27 +269,58 @@ jobs:
         run: |
           version="2.13.1"
           archive="git-cliff-${version}-x86_64-unknown-linux-gnu.tar.gz"
+          checksum="e716cce3a07dda41b1e370d6afbd7a59eb3d4739509fb7856aeec8da2be28c0396584e29e106141c1a1c535c1827dbc1f60417524f5cfb1da9e11f700bd00f30"
+          download_url="https://github.com/orhun/git-cliff/releases/download/v${version}"
           mkdir -p "$RUNNER_TEMP/git-cliff"
-          curl -fsSL "https://github.com/orhun/git-cliff/releases/download/v${version}/$archive" -o "$RUNNER_TEMP/$archive"
+          curl -fsSL "$download_url/$archive" -o "$RUNNER_TEMP/$archive"
+          (
+            cd "$RUNNER_TEMP"
+            printf '%s  %s\n' "$checksum" "$archive" | sha512sum --check --strict
+          )
           tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP/git-cliff"
           git_cliff="$(find "$RUNNER_TEMP/git-cliff" -type f -name git-cliff -perm -111 | head -n 1)"
           if [[ -z "$git_cliff" ]]; then
             echo "[ERR] git-cliff binary was not found after extraction"
             exit 1
           fi
-          "$git_cliff" --config .github/cliff.toml --latest --strip header --output CHANGES.md
+          if ! previous_stable_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude '*-*' HEAD^)"; then
+            echo "[ERR] no previous stable release tag was found"
+            exit 1
+          fi
+          echo "[INFO] Generating release notes for $previous_stable_tag..$GITHUB_REF_NAME"
+          # GitHub 元数据需要 API，取不到时 git-cliff 会以 101 退出；发布说明不值得因此失败，
+          # 因此同一区间再用 --offline 重跑一次。
+          if ! "$git_cliff" --config .github/cliff.toml "$previous_stable_tag..HEAD" --strip header --output CHANGES.md; then
+            echo "::warning::GitHub metadata is unavailable; generating release notes without pull request and contributor data."
+            "$git_cliff" --config .github/cliff.toml --offline "$previous_stable_tag..HEAD" --strip header --output CHANGES.md
+          fi
       - name: Upload release notes
         uses: actions/upload-artifact@v7
         with:
           name: release-notes
           path: CHANGES.md
 
+  # Android 三包（universal + 双 ABI 单包）与桌面包并行构建；Release 等
+  # 两边都完成后才创建，避免 Release 页面出现"桌面包已就位、APK 还在构建"的窗口期
+  android-apks:
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: ./.github/workflows/android-build.yml
+    with:
+      assemble: release
+    secrets: inherit
+    permissions:
+      contents: read
+
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [package, git_cliff]
+    needs: [package, git_cliff, android-apks]
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    # 统一的 Release 创建点：桌面 11 个资产 + APK 3 个一起上传
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - uses: actions/download-artifact@v8
         with:
@@ -204,14 +328,24 @@ jobs:
           merge-multiple: true
       - uses: softprops/action-gh-release@v3
         with:
+          prerelease: ${{ contains(github.ref_name, '-') }}
           body_path: release-assets/CHANGES.md
           files: |
             release-assets/*.zip
             release-assets/*.tar.gz
+            release-assets/*.dmg
+            release-assets/*.apk
       - name: Dispatch post-release hooks
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \
             -f event_type=create-maa-project-release \
+            -f client_payload[tag]="$GITHUB_REF_NAME"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \
+            -f event_type=mirrorchyan-upload \
+            -f client_payload[tag]="$GITHUB_REF_NAME" \
+            -f client_payload[android]=true
+          gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" \
+            -f event_type=mirrorchyan-release-note \
             -f client_payload[tag]="$GITHUB_REF_NAME"

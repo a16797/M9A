@@ -2,7 +2,8 @@
     "preset": [
         {
             "name": "日常-复刻",
-            "description": "刷取复刻活动关卡",
+            "label": "$Preset.DailyRerun",
+            "description": "$Preset.DailyRerun.desc",
             "task": [
                 {
                     "name": "启动游戏"
@@ -33,6 +34,14 @@
                 },
                 {
                     "name": "使用兑换码"
+                },
+                {
+                    "name": "局外演绎：黄昏的音序",
+                    "enabled": false
+                },
+                {
+                    "name": "局外演绎：无声综合征",
+                    "enabled": false
                 },
                 {
                     "name": "关闭游戏"

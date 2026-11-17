@@ -6,6 +6,23 @@ on:
       tag:
         default: ""
         required: false
+      android:
+        description: "一并上传 Android 的 M9A_exec 三个包"
+        type: boolean
+        default: false
+  # 供其它 workflow 以 workflow_call 复用（当前无人调用，保留备用）。正式发布走
+  # repository_dispatch：release.yml 建完 Release 统一派发，桌面与 Android 一次传完，
+  # 不用 release 事件——事件可能先于资产到达，按 filename 去 Release 里找会扑空。
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      android:
+        required: true
+        type: boolean
+  repository_dispatch:
+    types: [mirrorchyan-upload]
   release:
     types: [released]
 
@@ -15,7 +32,7 @@ jobs:
     # Mirror酱为第三方分发服务，新项目默认关闭
     # 若有需要请联系 Mirror酱 开通，直接自行开启是无法使用的
     # https://mirrorchyan.com/
-    if: ${{ github.repository_owner == 'MAA1999' }}
+    if: ${{ github.repository_owner == 'MAA1999' && inputs.android != true }}
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +44,7 @@ jobs:
           filetype: latest-release
           filename: ${{ format('M9A-{0}-{1}-*-MFAA*', matrix.os, matrix.arch) }}
           mirrorchyan_rid: M9A
-          tag: ${{ inputs.tag }}
+          tag: ${{ inputs.tag || github.event.client_payload.tag }}
 
           os: ${{ matrix.os }}
           arch: ${{ matrix.arch }}
@@ -42,7 +59,7 @@ jobs:
     # Mirror酱为第三方分发服务，新项目默认关闭
     # 若有需要请联系 Mirror酱 开通，直接自行开启是无法使用的
     # https://mirrorchyan.com/
-    if: ${{ github.repository_owner == 'MAA1999' }}
+    if: ${{ github.repository_owner == 'MAA1999' && inputs.android != true }}
     strategy:
       fail-fast: false
       matrix:
@@ -55,9 +72,41 @@ jobs:
           filetype: latest-release
           filename: ${{ format('M9A-{0}-{1}-*-MXU*', matrix.os, matrix.arch) }}
           mirrorchyan_rid: M9A-MXU
-          tag: ${{ inputs.tag }}
+          tag: ${{ inputs.tag || github.event.client_payload.tag }}
 
           os: ${{ matrix.os }}
+          arch: ${{ matrix.arch }}
+
+          owner: MAA1999
+          repo: M9A
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          upload_token: ${{ secrets.MirrorChyanUploadToken }}
+
+  # Android 的「可执行包」流：M9A_exec 与上面两条资源流不是同一个 rid。
+  # 在 mirrorchyan-upload 的 client_payload 里带 android=true（release.yml 统一派发，
+  # 桌面与 Android 一次传完），或手动跑本 workflow 勾选 android。
+  mirrorchyan_android:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'MAA1999' && (inputs.android == true || github.event.inputs.android == 'true' || github.event.client_payload.android == 'true') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: any
+            suffix: universal
+          - arch: arm64
+            suffix: arm64-v8a
+          - arch: x64
+            suffix: x86_64
+    steps:
+      - uses: MirrorChyan/uploading-action@v1
+        with:
+          filetype: latest-release
+          filename: ${{ format('*-android-{0}-*.apk', matrix.suffix) }}
+          mirrorchyan_rid: M9A_exec
+          tag: ${{ inputs.tag || github.event.client_payload.tag }}
+
+          os: android
           arch: ${{ matrix.arch }}
 
           owner: MAA1999

@@ -4,6 +4,9 @@
 
 Please keep the change focused and fill in the sections that apply.
 
+> fork 提交的 PR 会被自动审查：开 PR 时、以及转为正式时各跑一轮，之后新推的提交不会自动审 —— 需要在某个修订上再审时，在评论里 `@M9ABot`（它收到后会先在那条评论上点一个 👀）。
+> Fork PRs are reviewed automatically when opened and once more when marked ready for review; later pushes are not reviewed automatically. To review a specific revision, comment `@M9ABot` (it reacts with 👀 on that comment first).
+
 ## 关联 Issue / Related Issue
 
 <!-- Closes #123 / Fixes #123 / Related #123。没有 Issue 时请说明需求来源。 -->

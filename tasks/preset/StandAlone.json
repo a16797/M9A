@@ -2,16 +2,9 @@
     "preset": [
         {
             "name": "各种小游戏",
-            "description": "这部分的每个任务都需独立运行",
+            "label": "$Preset.MiniGames",
+            "description": "$Preset.MiniGames.desc",
             "task": [
-                {
-                    "name": "局外演绎：黄昏的音序",
-                    "enabled": false
-                },
-                {
-                    "name": "局外演绎：无声综合征",
-                    "enabled": false
-                },
                 {
                     "name": "复刻活动推图",
                     "enabled": false
@@ -46,6 +39,10 @@
                 },
                 {
                     "name": "8-bit 街机秀",
+                    "enabled": false
+                },
+                {
+                    "name": "缪斯碰碰盒速刷",
                     "enabled": false
                 }
             ]

@@ -50,17 +50,18 @@
         "spdx": "AGPL-3.0-or-later"
     },
     "maafw": {
-        "channel": "v5.11.1"
+        "channel": "beta",
+        "version": ""
     },
     "network": {
         "mode": "auto"
     },
     "ocr": {
         "files": {
-            "README.md": "ppocr_v4/zh_cn/README.md",
-            "det.onnx": "ppocr_v4/zh_cn/det.onnx",
-            "keys.txt": "ppocr_v4/zh_cn/keys.txt",
-            "rec.onnx": "ppocr_v4/zh_cn/rec.onnx"
+            "README.md": "ppocr_v6/small/README.md",
+            "det.onnx": "ppocr_v6/small/det.onnx",
+            "keys.txt": "ppocr_v6/small/keys.txt",
+            "rec.onnx": "ppocr_v6/small/rec.onnx"
         },
         "source": "submodule",
         "submodulePath": "MaaCommonAssets/OCR"
@@ -77,7 +78,7 @@
             "uv",
             "run",
             "python",
-            "agent/bootstrap.py"
+            "agent/main.py"
         ],
         "recommendedPython": "3.13",
         "requiresPython": ">=3.13,<3.14"
@@ -92,13 +93,15 @@
     ],
     "runtime": {
         "mfa": {
-            "channel": "v2.12.2-beta.3",
-            "enabled": true
+            "channel": "beta",
+            "enabled": true,
+            "version": ""
         },
         "mxu": {
-            "channel": "latest",
-            "enabled": true
+            "channel": "stable",
+            "enabled": true,
+            "version": ""
         }
     },
-    "schemaVersion": 1
+    "schemaVersion": 2
 }

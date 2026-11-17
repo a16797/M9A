@@ -847,7 +847,379 @@
                 "start_time": 1783630800000,
                 "end_time": 1784494799000,
                 "name": "长夜鸣笛",
-                "alias": "长夜鸣笛"
+                "alias": "长夜鸣笛",
+                "override": {
+                    "ActivityMainChapter": {
+                        "recognition": {
+                            "type": "OCR",
+                            "param": {
+                                "expected": [
+                                    "欢迎",
+                                    "乘车"
+                                ]
+                            }
+                        }
+                    },
+                    "FlagInActivityStage": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    1073,
+                                    582,
+                                    167,
+                                    64
+                                ]
+                            }
+                        }
+                    },
+                    "ActivityClickCurStage": {
+                        "action": {
+                            "param": {
+                                "target": [
+                                    56,
+                                    560,
+                                    36,
+                                    27
+                                ]
+                            }
+                        }
+                    },
+                    "ActivityClickPreStage": {
+                        "action": {
+                            "param": {
+                                "target": [
+                                    63,
+                                    570,
+                                    47,
+                                    36
+                                ]
+                            }
+                        }
+                    },
+                    "ActivityCombatStageNum": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    957,
+                                    59,
+                                    136,
+                                    69
+                                ]
+                            }
+                        }
+                    },
+                    "ActivityCombatStageCost": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    900,
+                                    588,
+                                    103,
+                                    55
+                                ]
+                            }
+                        }
+                    },
+                    "ActivityTargetLevel": {
+                        "attach": {
+                            "clicks": [
+                                [
+                                    937,
+                                    235
+                                ],
+                                [
+                                    1181,
+                                    238
+                                ]
+                            ]
+                        }
+                    },
+                    "ActivityTargetLevelRec": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    1024,
+                                    224,
+                                    78,
+                                    38
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "sp02": {
+        "version_name": "原子之心",
+        "start_time": 1784772000000,
+        "end_time": 1786741199000,
+        "activity": {
+            "combat": {
+                "event_type": "SideStory",
+                "start_time": 1784772000000,
+                "end_time": 1786481999000,
+                "override": {
+                    "FlagInActivityMain": {
+                        "recognition": {
+                            "type": "OCR",
+                            "param": {
+                                "roi": [
+                                    1140,
+                                    15,
+                                    130,
+                                    60
+                                ],
+                                "expected": "成就套装",
+                                "only_rec": true
+                            }
+                        }
+                    },
+                    "ActivityMainChapter": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    950,
+                                    540,
+                                    200,
+                                    150
+                                ],
+                                "expected": [
+                                    "剧情",
+                                    "步",
+                                    "入"
+                                ]
+                            }
+                        }
+                    },
+                    "FlagInActivityStage": {
+                        "recognition": {
+                            "type": "OCR",
+                            "param": {
+                                "roi": [
+                                    922,
+                                    559,
+                                    137,
+                                    33
+                                ],
+                                "expected": "始行动",
+                                "only_rec": true
+                            }
+                        }
+                    },
+                    "ActivityCombatStageNum": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    966,
+                                    76,
+                                    44,
+                                    31
+                                ],
+                                "expected": "[012][0-9]|日谈",
+                                "only_rec": true
+                            }
+                        }
+                    },
+                    "ActivityCombatStageCost": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    818,
+                                    561,
+                                    119,
+                                    31
+                                ],
+                                "color_filter": "ActivityCombatStageCost_color_filter"
+                            }
+                        }
+                    },
+                    "ActivityTargetLevel": {
+                        "attach": {
+                            "clicks": [
+                                [
+                                    821,
+                                    187
+                                ],
+                                [
+                                    1023,
+                                    187
+                                ]
+                            ]
+                        }
+                    },
+                    "ActivityTargetLevelRec": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    894,
+                                    175,
+                                    58,
+                                    26
+                                ]
+                            }
+                        }
+                    },
+                    "ActivityClickCurStage": {
+                        "recognition": {
+                            "type": "TemplateMatch",
+                            "param": {
+                                "roi": [
+                                    37,
+                                    93,
+                                    1211,
+                                    460
+                                ],
+                                "template": "Combat/Activity/Stage_sp02.png",
+                                "green_mask": true,
+                                "index": -1
+                            }
+                        },
+                        "action": {
+                            "type": "Click",
+                            "param": {
+                                "target": true
+                            }
+                        },
+                        "post_wait_freezes": {
+                            "time": 500,
+                            "target": [
+                                779,
+                                79,
+                                331,
+                                535
+                            ]
+                        }
+                    },
+                    "ActivityClickPreStage": {
+                        "action": {
+                            "type": "Click",
+                            "param": {
+                                "target": [
+                                    23,
+                                    335,
+                                    20,
+                                    30
+                                ]
+                            }
+                        },
+                        "post_wait_freezes": {
+                            "time": 700,
+                            "target": [
+                                779,
+                                79,
+                                331,
+                                535
+                            ]
+                        }
+                    },
+                    "SwitchToReplay": {
+                        "recognition": {
+                            "param": {
+                                "roi": [
+                                    841,
+                                    624,
+                                    56,
+                                    64
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "3.9": {
+        "version_name": "重燃！流金之海",
+        "start_time": 1786586400000,
+        "end_time": 1790197199000,
+        "activity": {
+            "combat": {
+                "event_type": "SideStory",
+                "start_time": 1786586400000,
+                "end_time": 1789937999000
+            },
+            "re-release": {
+                "start_time": 1789074000000,
+                "end_time": 1789851599000,
+                "name": "迁流的盛宴",
+                "alias": "迁流的盛宴",
+                "override": {
+                    "JudgeDuringRe_release": {
+                        "next": [
+                            "ActivityRe_releaseChapter",
+                            "[JumpBack]ActivityRe_releaseSwipeRight"
+                        ]
+                    },
+                    "ActivityRe_releaseSwipeRight": {
+                        "max_hit": 5,
+                        "action": {
+                            "type": "Swipe",
+                            "param": {
+                                "begin": [
+                                    799,
+                                    672,
+                                    43,
+                                    33
+                                ],
+                                "end": [
+                                    581,
+                                    672,
+                                    44,
+                                    33
+                                ]
+                            }
+                        }
+                    },
+                    "ActivityCombatStageNum": {
+                        "recognition": {
+                            "param": {
+                                "color_filter": "ActivityCombatStageNum_color_filter"
+                            }
+                        }
+                    },
+                    "ActivityCombatStageNum_color_filter": {
+                        "recognition": {
+                            "type": "ColorMatch",
+                            "param": {
+                                "lower": [
+                                    173,
+                                    167,
+                                    151
+                                ],
+                                "upper": [
+                                    205,
+                                    203,
+                                    199
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "4.0": {
+        "version_name": "应门者",
+        "start_time": 1790215200000,
+        "end_time": 1794085199000,
+        "activity": {
+            "combat": {
+                "event_type": "MainStory",
+                "start_time": 1790215200000,
+                "end_time": 1793825999000
+            }
+        }
+    },
+    "4.1": {
+        "version_name": "亚特兰蒂斯谋杀案",
+        "start_time": 1793844000000,
+        "end_time": 1796849999000,
+        "activity": {
+            "combat": {
+                "event_type": "SideStory",
+                "start_time": 1793844000000,
+                "end_time": 1796590799000
             }
         }
     }

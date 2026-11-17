@@ -1,0 +1,17 @@
+{
+    "task": [
+        {
+            "name": "角色升级(beta)",
+            "label": "$Task.CharUpgrade",
+            "entry": "CharUpgrade",
+            "description": "$Task.CharUpgrade.desc",
+            "group": [
+                "standalone"
+            ],
+            "pipeline_override": {},
+            "option": [
+                "吃糖"
+            ]
+        }
+    ]
+}

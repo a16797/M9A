@@ -1,6 +1,7 @@
 {
     "EatCandy": {
         "next": [
+            "EatCandyPage",
             "EatCandyEnter"
         ]
     },
@@ -29,6 +30,7 @@
                 ]
             }
         },
+        "post_delay": 1500,
         "next": [
             "EatCandyPage",
             "EatCandyEnter"
@@ -214,7 +216,10 @@
                     104,
                     100
                 ],
-                "template": "EatCandy/MiniCandy.png"
+                "template": [
+                    "EatCandy/MiniCandy.png",
+                    "EatCandy/SandwichCandy.png"
+                ]
             }
         },
         "action": {

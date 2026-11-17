@@ -1,6 +1,7 @@
 ---
 order: 6
 icon: mdi:information-outline
+description: What each M9A automated task does — starting the game, collecting from the Wilderness, daily tasks — and which options each one exposes.
 ---
 
 # Feature Introduction
@@ -28,6 +29,16 @@ Farm daily free Will Analysis attempts, including the following options:
 - **Double Analysis Bonus Battle**: Use stamina for combat when double analysis bonus is available
 - **Consume Candy**: Automatically use psychube candy
 
+## Smart Balanced Material Farming
+
+Farm materials: with "Depot maintain" enabled it tops up each material to its target amount; otherwise it farms whichever material you have the least of (insight stages excluded). Options include:
+
+- **Depot maintain**: master switch (off by default); the two settings below appear only when enabled
+    - **Participating materials**: tick the materials to top up and fill in each one's target amount and candy uses
+- **Consume Candy**: Automatically use candy
+- **Custom Combat Count**: Specify combat count. It will consume all stamina when disabled.
+- **Drop Statistics Report**: Report stage drop data
+
 ## Regular Combat
 
 Execute regular stage combat, including the following options:
@@ -40,10 +51,10 @@ Execute regular stage combat, including the following options:
 - **Drop Statistics Report**: Report stage drop data
 
 ::: tip
-Chapter 12 has added new materials, welcome to farm new stages to help update the one-image guide!
+Chapter 13 has been updated. Welcome to farm new stages to help update the one-image guide!
 :::
 
-## Event Farming
+## Event Token Farming
 
 Farm event stages, including the following options:
 
@@ -103,13 +114,17 @@ Claim various rewards, including the following options:
 - **Claim Mail Rewards**: Collect rewards from mail
 - **Claim Task Rewards**: Claim daily and weekly task rewards
 - **Claim Roar Roar Jukebox**: Claim Roar Roar Jukebox rewards
+- **Event Box Rewards**: Claim event box rewards
+- **Mystery Sea Weekly Sweep Rewards**: Complete the Suspended in the Rain: Mystery Sea "Think" weekly sweep and claim rewards
 
-## Suspended in the Rain: Mystery Sea
+## Redeem Codes
 
-Complete "Think" weekly sweep task.
+Automatically enter and redeem codes, including the following options:
+
+- **Custom Redeem Codes**: Enter one or more codes (separated by spaces, commas, or semicolons)
 
 ::: note
-This feature only completes "Think" weekly sweep
+Already-used codes for the current account are skipped automatically
 :::
 
 ## Switch Account
@@ -120,8 +135,17 @@ Leave the field empty to scroll to the bottom of the account list and switch to 
 
 - After switching, you can continue adding tasks for multi-account multi-configuration task execution
 - Currently only supports Official server
-- Only supports emulator environments with an actual unscaled resolution of 1280×720
-  :::
+
+:::
+
+## Switch Art Framework
+
+Switch the main interface art framework. Available options:
+
+- **Suitcase Standard (Default)**
+- **What Icarus Saw**
+- **Diminuendo Heartstring**
+- **Paper-Cut Plum Adornment**
 
 ## Close Game
 
@@ -136,7 +160,7 @@ This feature is currently not supported on the Global server PC client. If you n
 Roguelike mode for farming credits, including the following options:
 
 - **Catalyst Selection**: Choose the catalyst to use (only effective in non-fast mode)
-- **Fast Mode**: When enabled, only uses Magic Lamp to farm the first floor
+- **Fast Mode**: When enabled, only uses the Arcane Lantern to farm the first floor
 - **Deduction Difficulty**: Select deduction difficulty
 
 ### Fast Mode
@@ -234,15 +258,36 @@ This feature does not change characters and takes all debuffs, so it's only suit
 - Test team: 37 + Eternity + Melmoth + Semmelweis + Tutu (note: place main DPS in 5th position)
   :::
 
-### Critter Crash
+### Event Stage Clear (Main Story and Events)
 
-Quick farming in Critter Crash interface.
+Automatically clear main-story / event stage maps, including the following options:
+
+- **Select Event**: Choose current page, current event, or a specified past event
+- **Clear Mode**:
+    - **Story/Main**: Automatically detect unfinished stages marked with a gray star next to the stage number and clear them in order; after finishing, it will try Path stages
+    - **Exploration Mode**: Unlocked in later event phases; if currently on the Story page it will switch to Exploration first. Main-story maps without Exploration mode are skipped automatically
+- **Consume Candy**: Automatically use candy when stamina is depleted
 
 ::: warning
 
-- Start in Critter Crash interface
-- Supports CN server version 3.2
-- Please play two rounds manually first to raise alert level to 3 before using
+- Please manually open the main-story / event stage map page before running this task
+- If the task hits mini-games, special tutorials, or other screens it cannot handle, it will stop automatically (error screenshots are saved under `debug/on_error`). Finish those manually, return to the stage map page, and rerun to continue
+
+:::
+
+### Critter Crash Fast Farm
+
+Auto-plays "Challenge Mode" for rewards: prefers 小叶尼塞 as leader, fills the board with 鹿蜀, then upgrades; uses only free refreshes each round.
+
+::: warning
+
+- Start at any of: the event entry page "参与游戏" / the Critter Crash main menu / an ongoing match
+- Supports CN server version 4.0
+- If 小叶尼塞 is not offered, it picks from the available slots and still plays
+- If the encounter (which decides the shop pool) is not on the whitelist (杻阳有兽 / 大大大礼帽 / 库存盘点 / 装修计划), it **forfeits the run and starts over** to reroll, up to 15 times; forfeiting does not affect your rating (in-game prompt: "此时放弃对战评分不变")
+- When started from the main menu with an unfinished run (the ✕ next to "箱中对决" is still there), the task forfeits that run first and starts a new one — otherwise it would only resume the old run and never reroll the encounter. Starting from an ongoing match keeps playing that match instead
+- After a match wraps up the game may drop back to the event entry page; the task clicks "参与游戏" to get back in and keeps farming. If the page stays on the entry page after that click (it cannot get in), the task **ends normally** instead of erroring out
+- Once the rank is maxed (level 8, 「棋艺人生」) the season's rewards are complete, so the task **ends normally** on the main menu instead of farming on
   :::
 
 ### Pre-Storm Protocol
@@ -264,6 +309,17 @@ This task has two scenarios:
 Please select the corresponding option based on your situation
 :::
 
+### UTTU Flicker Assembly
+
+Automatically clear UTTU Flicker Assembly stages.
+
+::: warning
+
+- Start after configuring your team on the first floor of each UTTU phase
+- Clears four floors automatically; trial characters are removed on the next floor, so please use your own characters
+
+:::
+
 ### Complete Induction
 
 Complete the Complete Induction mini-game.
@@ -278,31 +334,39 @@ Please complete one full round manually first to finish the tutorial, then start
 
 ### 8-bit Arcade Show
 
-Complete 8-bit Arcade Show mini-game, including the following options:
+Farms Pixel Cassettes in the 4.1 "8-bit Arcade Show: Dungeon Survivors" (spent in the Noise Tracker reward track), including the following options:
 
-- **Stage Difficulty**: Select stage difficulty
-- **Farming Mode**: Select farming mode based on your needs
+- **Movement Input**: taps the on-screen D-pad by default; switch to the keyboard arrow keys on PC if tapping does not move the character
+
+Each run: enter One-Way Coin I → pick a blessing → clear the 3 normal levels of stage 1 → pause at the boss level and return to the hall to settle → start again. A run takes about 3 minutes and pays 30 Pixel Cassettes and 30 Pixel Gems.
+
+- **In a level**: moves in a fixed up→left→down→right rhythm; during "Defeat all monsters" it walks toward a straggler once only a few monsters remain and none is inside weapon range, and sweeps a wider area if no monster is visible for several steps
+- **Shop (Underground Exchange)**: buys affordable stat-only Muse relics (damage, attack range, HP, crit, dodge) from left to right, skips relics that spawn bombs or summons or change shop rules, and buys nothing in the shop right before the boss
 
 ::: warning
-This task needs to run independently. Please navigate to the difficulty selection page before running.
+This task needs to run on its own and loops until you stop it. You can start it from the game's main screen, the event page, or the Muse arcade hall.
 :::
 
 ::: note
-This task has two scenarios:
-
-1. Clear the first floor then exit directly (stable)
-2. Keep going as far as possible (continue fighting after the first floor without exiting)
-
-Please select the corresponding option based on your situation
+The first entry into the mode forces a tutorial. Finish it by hand once before using this task.
 :::
 
-### Auto Stage Clear (Testing)
+### Character Upgrade (beta)
 
-Auto stage clear feature, currently in testing phase.
+Automatically upgrade the character (resonance + level) when entering the character detail page, until materials are insufficient or the cap (Insight 3 / Resonance 9) is reached, including the following options:
+
+- **Consume Candy**: Automatically use candy when stamina is insufficient
 
 ::: warning
+Please manually enter the character detail page (showing "Personal Attributes") before running.
+Only supports farming attribute breakthrough materials; non-attribute breakthrough materials need to be farmed manually.
+This is a beta feature; please report any issues encountered.
+:::
 
-- This feature is in testing and is not guaranteed to work properly
-- Currently not available for the main story
-- Please manually open the page you need to clear (such as current event, anecdote, etc.) before running this task
-  :::
+### Trust Rewards
+
+Start from the main interface to automatically enter the character list, sort by trust in descending order, and collect Single/Culture trust rewards for characters with unlocked trust rewards.
+
+::: note
+Start the task from the main interface. Characters are sorted by trust descending and the task scrolls through the full list automatically. Only characters with unlocked trust rewards are collected.
+:::

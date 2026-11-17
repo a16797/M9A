@@ -1,0 +1,235 @@
+from types import SimpleNamespace
+
+import numpy as np
+from maa.define import BoxAndScoreResult, OCRResult, RecognitionDetail, Rect
+
+from agent.custom.action.balanced_farming import BalancedFarmingAnalyze, balanced_candidates
+from agent.utils.material_catalog import FamilySpec, build_catalog, load_catalog, parse_stage_code
+
+
+def _icon_detail(box: tuple[int, int, int, int] | None) -> RecognitionDetail:
+    """图标匹配结果：box 为 None 时表示未命中。"""
+    rect = Rect(*box) if box is not None else None
+    return RecognitionDetail(
+        reco_id=1,
+        name="BF_ItemIcon",
+        algorithm="TemplateMatch",
+        hit=rect is not None,
+        box=rect,
+        all_results=[],
+        filtered_results=[],
+        best_result=BoxAndScoreResult(rect, 0.99) if rect is not None else None,
+        raw_detail={},
+        raw_image=np.zeros((1, 1, 3), dtype=np.uint8),
+        draw_images=[],
+    )
+
+
+def _count_detail(text: str, roi: list[int]) -> RecognitionDetail:
+    """数量 OCR 结果：text 为空表示低于阈值被 MaaFW 过滤（best_result 为空）。"""
+    rect = Rect(*roi)
+    return RecognitionDetail(
+        reco_id=2,
+        name="BF_ItemCount",
+        algorithm="OCR",
+        hit=bool(text),
+        box=rect,
+        all_results=[],
+        filtered_results=[OCRResult(rect, 0.9, text)] if text else [],
+        best_result=OCRResult(rect, 0.9, text) if text else None,
+        raw_detail={},
+        raw_image=np.zeros((1, 1, 3), dtype=np.uint8),
+        draw_images=[],
+    )
+
+
+class _FakeContext:
+    """最小 context 桩：按脚本返回图标/数量识别结果，并记录数量的 ROI。"""
+
+    def __init__(self, icon_box: tuple[int, int, int, int] | None, text: str) -> None:
+        self._icon_box = icon_box
+        self._text = text
+        self.count_rois: list[list[int]] = []
+
+    def run_recognition(self, name: str, image: object, override: dict) -> RecognitionDetail:
+        if name == "BF_ItemIcon":
+            return _icon_detail(self._icon_box)
+        roi = override[name]["recognition"]["param"]["roi"]
+        self.count_rois.append(roi)
+        return _count_detail(self._text, roi)
+
+
+def _analyze() -> BalancedFarmingAnalyze:
+    return BalancedFarmingAnalyze.__new__(BalancedFarmingAnalyze)
+
+
+def test_balanced_candidates_skips_character_and_insight() -> None:
+    """旧「均衡取最少」不参与均衡的两类材料。
+
+    货币（source=character）不在仓库页、扫不到；洞悉本（ME/SL/SS/BW）单局体力消耗高，
+    只在「库存保持」里按逐材料目标刷 —— 不排除的话，「谁最少刷谁」会一直往洞悉本上撞。
+    """
+    raw = {
+        "110103": {"name": "啮咬盒", "stage": "7-26", "level": "Hard"},
+        "115011": {"name": "岩中典残篇", "stage": "ME-02", "level": "None"},
+        "115042": {"name": "兽涎典孤卷", "stage": "BW-04", "level": "None"},
+        "205": {"name": "微尘", "stage": "LP-06", "level": "None", "source": "character"},
+        "203": {"name": "利齿子儿", "stage": "MA-06", "level": "None", "source": "character"},
+    }
+    catalog = build_catalog(raw, source="unit-test")
+    assert set(balanced_candidates(catalog)) == {"110103"}
+
+    assert balanced_candidates({}) == {}
+
+
+def test_stage_family_legacy_flag() -> None:
+    """资源关卡族默认不参与旧流程；主线（没有 family）恒参与。"""
+    for code in ("ME-02", "SL-04", "SS-06", "BW-04", "MA-06", "LP-06", "Psychube-01"):
+        assert not parse_stage_code(code).is_legacy_farmable, code
+    assert parse_stage_code("7-26").is_legacy_farmable
+
+
+def test_new_family_defaults_to_not_legacy_farmable() -> None:
+    """新增关卡族默认 `legacy=False` —— 必须显式置 True 才会被旧流程刷取。
+
+    这样将来出现「体力贵但不是洞悉本」的族时，不会被默默纳入均衡；洞悉本正因此天然被排除。
+    """
+    assert not FamilySpec("ResourceChapter_NEW", "新族").legacy
+    assert FamilySpec("ResourceChapter_NEW", "新族", legacy=True).legacy
+
+
+def test_balanced_candidates_resolves_name_from_items_json() -> None:
+    """目录不写 name 时名称回退到 items.json —— 旧流程靠这一条拿到显示名。"""
+    raw = {"110103": {"stage": "7-26", "level": "Hard"}}
+    catalog = build_catalog(raw, source="unit-test", names={"110103": "啮咬盒"})
+
+    entry = balanced_candidates(catalog)["110103"]
+    assert (entry.name, entry.stage.code, entry.level) == ("啮咬盒", "7-26", "Hard")
+
+
+def test_shipped_catalog_has_resolvable_names() -> None:
+    """回归：随仓库发布的目录里，仓库材料的名称/关卡必须都解析得出来。
+
+    目录里的 24 条仓库材料已经不写 `name`（单一来源是 items.json）。旧「均衡取最少」流程
+    若绕过 `load_catalog()` 直接读原始 JSON，就会在第一次取 `name` 时 KeyError ——
+    而它是「库存保持」总开关关闭时的默认路径，没开新功能的用户全都会中招。
+    """
+    materials = balanced_candidates(load_catalog())
+
+    assert materials, "随仓库发布的目录里不应没有仓库材料"
+    for item_id, entry in materials.items():
+        assert entry.name, f"{item_id} 没有可解析的显示名"
+        assert entry.stage.code and entry.level, f"{item_id} 缺关卡信息"
+    # 货币（source=character）走角色升级页，不在仓库页，旧流程必须排除掉
+    assert "203" not in materials
+    assert "205" not in materials
+    # 洞悉本（ME/SL/SS/BW）只在「库存保持」里按逐材料目标刷，旧流程必须排除掉
+    assert not [item_id for item_id, entry in materials.items() if not entry.stage.is_legacy_farmable]
+
+
+def test_count_roi_is_middle_half_anchored_to_icon_bottom() -> None:
+    """回归：数量 ROI 取图标中部一半、贴图标底边 30px 高。
+
+    整宽 ROI（87x79 图标 → 71x36）会把单字符「1」稀释成小目标，OCR 置信度掉到 MaaFW
+    默认阈值 0.3 以下被过滤，数量读到空串（110403 祝圣秘银，实测 0.228）。
+    """
+    context = _FakeContext((1101, 213, 87, 79), "1")
+
+    found, count = _analyze()._recognize_item(context, None, "110403")
+
+    assert (found, count) == (True, 1)
+    assert context.count_rois == [[1122, 292, 44, 30]]
+
+
+def test_recognize_item_keeps_icon_found_when_count_unreadable() -> None:
+    """图标找到但数量 OCR 被阈值过滤：返回 (True, None)，不能按 0 计入候选。"""
+    context = _FakeContext((613, 378, 59, 83), "")
+
+    assert _analyze()._recognize_item(context, None, "110103") == (True, None)
+
+
+def test_recognize_item_parses_longest_digit_group() -> None:
+    """数量文本取最长数字组，忽略千分位与噪声字符。"""
+    context = _FakeContext((613, 378, 59, 83), "1,234 噪声 5")
+
+    assert _analyze()._recognize_item(context, None, "110103") == (True, 1234)
+
+
+def test_recognize_item_skips_count_clipped_by_screen_bottom() -> None:
+    """数量条超出屏幕底部时不读（不调用 OCR），等滚动后再读，避免半截数字。"""
+    context = _FakeContext((1101, 660, 87, 79), "1")
+
+    assert _analyze()._recognize_item(context, None, "110403") == (False, None)
+    assert context.count_rois == []
+
+
+def test_recognize_item_returns_not_found_when_icon_missing() -> None:
+    """图标未匹配到：返回 (False, None) 且不做数量识别。"""
+    context = _FakeContext(None, "1")
+
+    assert _analyze()._recognize_item(context, None, "110403") == (False, None)
+    assert context.count_rois == []
+
+
+class _FakeController:
+    """`post_screencap` / `post_swipe` 都返回自身，`wait().get()` 给个占位图。"""
+
+    def post_screencap(self) -> "_FakeController":
+        return self
+
+    def post_swipe(self, *_args: object) -> "_FakeController":
+        return self
+
+    def wait(self) -> "_FakeController":
+        return self
+
+    def get(self) -> object:
+        return object()
+
+
+# 目录里的一条洞悉本材料（岩中典残篇，ME-02）：run 级用例用它验证洞悉本被排除
+_INSIGHT_ITEM_ID = "115011"
+
+
+class _AnalyzeContext:
+    """驱动 `BalancedFarmingAnalyze.run` 的最小桩：图标全命中，数量读成固定值。
+
+    洞悉本材料（`_INSIGHT_ITEM_ID`）故意读成更小的 1、其余读成 5 —— 若读数相同，
+    `min(sorted(...))` 会挑 id 最小的 110103，洞悉本即使被错误纳入候选也看不出来；
+    给它更小的数量，混入时它才会成为「最少」被选中，让 run 级断言真的失败。
+    """
+
+    def __init__(self) -> None:
+        self.tasker = SimpleNamespace(controller=_FakeController())
+        self.pipeline_overrides: list[dict] = []
+        self._item_id = ""
+
+    def run_recognition(self, name: str, image: object, override: dict) -> RecognitionDetail:
+        if name == "BF_ItemIcon":
+            template = override[name]["recognition"]["param"]["template"]
+            self._item_id = template.removeprefix("Warehouse/Item-").removesuffix(".png")
+            return _icon_detail((100, 200, 87, 79))
+        roi = override[name]["recognition"]["param"]["roi"]
+        return _count_detail("1" if self._item_id == _INSIGHT_ITEM_ID else "5", roi)
+
+    def override_pipeline(self, pipeline: dict) -> None:
+        self.pipeline_overrides.append(pipeline)
+
+
+def test_analyze_reads_shipped_catalog_without_name_field() -> None:
+    """回归：旧「均衡取最少」流程直接吃随仓库发布的目录。
+
+    目录里的仓库材料已经不再写 `name`（单一来源是 items.json）。旧实现用 `json.load` 读原始
+    JSON 后直接取 `materials[item_id]["name"]`，会在这里 KeyError —— 而它是「库存保持」总开关
+    关闭时的默认路径，未开启新功能的用户全都会中招。
+    """
+    context = _AnalyzeContext()
+
+    result = _analyze().run(context, None)  # pyright: ignore[reportArgumentType]
+
+    assert result.success
+    override = context.pipeline_overrides[-1]["SelectCombatStage"]
+    # 主线材料读数都是 5 → 取 id 最小的 110103（啮咬盒，7-26 Hard）；
+    # 洞悉本读数更小（1），一旦被错误纳入候选就会顶掉它 —— 这正是本用例要拦的回归。
+    assert override["action"]["param"]["custom_action_param"]["stage"] == "7-26"
+    assert override["attach"]["level"] == "Hard"

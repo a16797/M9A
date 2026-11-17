@@ -5,7 +5,9 @@ ACTION_MODULES = (
     "activity",
     "balanced_farming",
     "bank",
+    "char_upgrade",
     "combat",
+    "depot_maintain",
     "lucidscape",
     "wilderness",
     "outside_deduction",
@@ -18,6 +20,8 @@ ACTION_MODULES = (
     "switch_account",
     "complete_induction",
     "eight_bit",
+    "warehouse_inventory",
+    "art_of_illumination",
 )
 
 

@@ -31,7 +31,16 @@
                 "TargetCountProgress",
                 "TargetCountFinish",
                 "TargetCountAbort",
+                "RecordNoFreePsychube",
+                "TargetCountCandyRoute",
+                "StartReplayCandyRoute",
                 "BalancedFarmingAnalyze",
+                "DepotMaintainInit",
+                "DepotMaintainPlan",
+                "DepotMaintainRefresh",
+                "DepotMaintainDone",
+                "DepotMaintainAccumulate",
+                "DepotCurrencyRead",
                 "JudgeDepthsOfMythWeekly",
                 "ResetEatCandyFlag",
                 "CombatActivityOverride",
@@ -46,6 +55,7 @@
                 "CCChessboard",
                 "CCLevelUp",
                 "CCBuyCard",
+                "CCSticker",
                 "SOSSelectNoise",
                 "SOSSelectInstrument",
                 "SOSSelectNode",
@@ -64,7 +74,10 @@
                 "CISelectResearchers",
                 "EightBitCombatMove",
                 "EightBitScoreRecord",
-                "EightBitCombatInit"
+                "EightBitShopBuy",
+                "CUB_StartAllIn",
+                "WarehouseInventoryScan",
+                "ArtOfIlluminationScratch"
             ]
         }
     },
@@ -151,7 +164,31 @@
             "$ref": "#/$defs/TargetCountAbort"
         },
         {
+            "$ref": "#/$defs/RecordNoFreePsychube"
+        },
+        {
+            "$ref": "#/$defs/TargetCountCandyRoute"
+        },
+        {
+            "$ref": "#/$defs/StartReplayCandyRoute"
+        },
+        {
             "$ref": "#/$defs/BalancedFarmingAnalyze"
+        },
+        {
+            "$ref": "#/$defs/DepotMaintainInit"
+        },
+        {
+            "$ref": "#/$defs/DepotMaintainPlan"
+        },
+        {
+            "$ref": "#/$defs/DepotMaintainRefresh"
+        },
+        {
+            "$ref": "#/$defs/DepotMaintainDone"
+        },
+        {
+            "$ref": "#/$defs/DepotMaintainAccumulate"
         },
         {
             "$ref": "#/$defs/JudgeDepthsOfMythWeekly"
@@ -197,6 +234,9 @@
         },
         {
             "$ref": "#/$defs/CCBuyCard"
+        },
+        {
+            "$ref": "#/$defs/CCSticker"
         },
         {
             "$ref": "#/$defs/SOSSelectNoise"
@@ -253,7 +293,19 @@
             "$ref": "#/$defs/EightBitScoreRecord"
         },
         {
-            "$ref": "#/$defs/EightBitCombatInit"
+            "$ref": "#/$defs/EightBitShopBuy"
+        },
+        {
+            "$ref": "#/$defs/CUB_StartAllIn"
+        },
+        {
+            "$ref": "#/$defs/WarehouseInventoryScan"
+        },
+        {
+            "$ref": "#/$defs/DepotCurrencyRead"
+        },
+        {
+            "$ref": "#/$defs/ArtOfIlluminationScratch"
         }
     ],
     "$defs": {
@@ -887,6 +939,69 @@
                 }
             }
         },
+        "DepotMaintainInit": {
+            "properties": {
+                "custom_action": {
+                    "const": "DepotMaintainInit",
+                    "description": "库存保持任务入口：重置规划状态（每次任务只允许一次仓库全量扫描）。"
+                }
+            }
+        },
+        "DepotMaintainPlan": {
+            "properties": {
+                "custom_action": {
+                    "const": "DepotMaintainPlan",
+                    "description": "库存保持规划：读仓库快照与 GUI 逐材料目标库存，挑缺口最大的材料并覆盖作战关卡与刷取次数；未开启或没有任何目标时退回原有均衡逻辑。"
+                },
+                "custom_action_param": {
+                    "type": "object",
+                    "properties": {
+                        "depot_disabled": {
+                            "type": "boolean",
+                            "description": "「库存保持」总开关关闭时为 true，直接退回原有均衡逻辑"
+                        }
+                    },
+                    "patternProperties": {
+                        "^(target|candy)_\\d+$": {
+                            "type": "string"
+                        }
+                    },
+                    "unevaluatedProperties": false
+                }
+            }
+        },
+        "DepotMaintainRefresh": {
+            "properties": {
+                "custom_action": {
+                    "const": "DepotMaintainRefresh",
+                    "description": "库存保持：触发仓库全量扫描以刷新快照。"
+                }
+            }
+        },
+        "DepotMaintainDone": {
+            "properties": {
+                "custom_action": {
+                    "const": "DepotMaintainDone",
+                    "description": "库存保持收尾：输出本次规划结果。"
+                }
+            }
+        },
+        "DepotMaintainAccumulate": {
+            "properties": {
+                "custom_action": {
+                    "const": "DepotMaintainAccumulate",
+                    "description": "结算页累计本局掉落（优先 drop_core 累计，缺失时自读结算页），达标后当前批次收尾。"
+                }
+            }
+        },
+        "DepotCurrencyRead": {
+            "properties": {
+                "custom_action": {
+                    "const": "DepotCurrencyRead",
+                    "description": "库存保持：读角色升级面板右上角的微尘/利齿子儿数量，写回快照后返回主界面。"
+                }
+            }
+        },
         "JudgeDepthsOfMythWeekly": {
             "allOf": [
                 {
@@ -1217,7 +1332,7 @@
             "properties": {
                 "custom_action": {
                     "const": "EightBitCombatMove",
-                    "description": "8-bit 战斗界面移动逻辑"
+                    "description": "8-bit 街机秀（幸存者游戏）普通关：平时按 上→左→下→右 固定节奏移动，清场阶段怪少时主动靠近落单的怪，一次调用打完整关"
                 },
                 "custom_action_param": {
                     "type": "object",
@@ -1225,11 +1340,33 @@
                         "move_input": {
                             "type": "string",
                             "enum": [
-                                "key",
-                                "click"
+                                "click",
+                                "key"
                             ],
-                            "description": "移动输入方式。key 使用方向键，click 使用 Python 中预留的四方向点击坐标。",
-                            "default": "key"
+                            "description": "移动输入方式。click 点击屏幕左下角方向键，key 发送 Android 方向键。",
+                            "default": "click"
+                        },
+                        "move_strategy": {
+                            "type": "string",
+                            "enum": [
+                                "hybrid",
+                                "cycle",
+                                "smart"
+                            ],
+                            "description": "移动策略。hybrid 固定节奏 + 怪少时主动靠近落单的怪（默认），cycle 始终按 上→左→下→右 循环，smart 读棋盘靠近怪物并躲预警。",
+                            "default": "hybrid"
+                        },
+                        "interval_ms": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "每步间隔毫秒。",
+                            "default": 500
+                        },
+                        "level_timeout_s": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "description": "单关超时秒数，超时返回失败并走 on_error。",
+                            "default": 150
                         }
                     },
                     "unevaluatedProperties": false
@@ -1240,15 +1377,71 @@
             "properties": {
                 "custom_action": {
                     "const": "EightBitScoreRecord",
-                    "description": "8-bit 战斗结束后记录获得代币数量并统计效率"
+                    "description": "8-bit 街机秀结算页记录本局像素卡带并统计效率，然后关闭结算页"
                 }
             }
         },
-        "EightBitCombatInit": {
+        "EightBitShopBuy": {
             "properties": {
                 "custom_action": {
-                    "const": "EightBitCombatInit",
-                    "description": "8-bit 战斗初始化，检测是否需要开启碰壁检测"
+                    "const": "EightBitShopBuy",
+                    "description": "8-bit 街机秀商店「地下流通处」：从左到右买下买得起的纯属性缪斯秘宝，首领关前的商店不买"
+                }
+            }
+        },
+        "CUB_StartAllIn": {
+            "properties": {
+                "custom_action": {
+                    "const": "CUB_StartAllIn",
+                    "description": "角色升级：计算材料缺口后启动复现战斗"
+                }
+            }
+        },
+        "WarehouseInventoryScan": {
+            "properties": {
+                "custom_action": {
+                    "const": "WarehouseInventoryScan",
+                    "description": "扫描仓库素材页全部已配模板材料数量并保存到 config/warehouse_inventory.json"
+                }
+            }
+        },
+        "RecordNoFreePsychube": {
+            "properties": {
+                "custom_action": {
+                    "const": "RecordNoFreePsychube",
+                    "description": "记录心相关卡当日免费次数已用完，供 TargetCountDetermine 改按剩余体力核算可复现次数。"
+                }
+            }
+        },
+        "TargetCountCandyRoute": {
+            "properties": {
+                "custom_action": {
+                    "const": "TargetCountCandyRoute",
+                    "description": "连续复现点击后弹出吃糖界面的兜底路由，防止复现链无法识别吃糖界面而超时失败。"
+                }
+            }
+        },
+        "StartReplayCandyRoute": {
+            "properties": {
+                "custom_action": {
+                    "const": "StartReplayCandyRoute",
+                    "description": "固定次数复现点击后弹出吃糖界面的兜底路由。"
+                }
+            }
+        },
+        "ArtOfIlluminationScratch": {
+            "properties": {
+                "custom_action": {
+                    "const": "ArtOfIlluminationScratch",
+                    "description": "光影栖身处刮卡：按「盖着的格子有动画、已翻开的静止」这一**相对**判据扫出未开格并**随机**挑一个点开，直到折射次数用完或没有可翻的格子；翻牌后的「获得物品」页与两种详情面板各有专门节点关闭，本页翻完而次数还有剩时由 AOI_PageSwitch 翻到另一幕布接着翻。无参数。"
+                }
+            }
+        },
+        "CCSticker": {
+            "properties": {
+                "custom_action": {
+                    "const": "CCSticker",
+                    "description": "翻斗棋：专属贴纸箱（点开箱子并把贴纸拖到空位）"
                 }
             }
         }

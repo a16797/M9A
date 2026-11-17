@@ -2,24 +2,27 @@
     "task": [
         {
             "name": "自动深眠",
+            "label": "$Task.Limbo",
             "entry": "Limbo",
+            "description": "$Task.Limbo.desc",
+            "group": [
+                "daily"
+            ],
             "option": [
                 "上半编队",
                 "下半编队",
                 "仅领取每周浅眠域奖励"
-            ],
-            "group": [
-                "daily"
-            ],
-            "description": "<span style=\"color:tomato;font-size:15px\">注意上下半编队不要重复。支持旧版和改版编队、支持编队自定义命名，未来可支持编队超出前四个</span>"
+            ]
         }
     ],
     "option": {
         "上半编队": {
             "type": "select",
+            "label": "$Option.Limbo.FirstHalfFormation",
             "cases": [
                 {
                     "name": "一",
+                    "label": "$Common.Formation.1",
                     "pipeline_override": {
                         "LimboTeamSelection_1": {
                             "action": {
@@ -34,6 +37,7 @@
                 },
                 {
                     "name": "二",
+                    "label": "$Common.Formation.2",
                     "pipeline_override": {
                         "LimboTeamSelection_1": {
                             "action": {
@@ -48,6 +52,7 @@
                 },
                 {
                     "name": "三",
+                    "label": "$Common.Formation.3",
                     "pipeline_override": {
                         "LimboTeamSelection_1": {
                             "action": {
@@ -62,6 +67,7 @@
                 },
                 {
                     "name": "四",
+                    "label": "$Common.Formation.4",
                     "pipeline_override": {
                         "LimboTeamSelection_1": {
                             "action": {
@@ -78,9 +84,11 @@
         },
         "下半编队": {
             "type": "select",
+            "label": "$Option.Limbo.SecondHalfFormation",
             "cases": [
                 {
                     "name": "二",
+                    "label": "$Common.Formation.2",
                     "pipeline_override": {
                         "LimboTeamSelection_2": {
                             "action": {
@@ -95,6 +103,7 @@
                 },
                 {
                     "name": "三",
+                    "label": "$Common.Formation.3",
                     "pipeline_override": {
                         "LimboTeamSelection_2": {
                             "action": {
@@ -109,6 +118,7 @@
                 },
                 {
                     "name": "四",
+                    "label": "$Common.Formation.4",
                     "pipeline_override": {
                         "LimboTeamSelection_2": {
                             "action": {
@@ -123,6 +133,7 @@
                 },
                 {
                     "name": "一",
+                    "label": "$Common.Formation.1",
                     "pipeline_override": {
                         "LimboTeamSelection_2": {
                             "action": {
@@ -139,6 +150,8 @@
         },
         "仅领取每周浅眠域奖励": {
             "type": "switch",
+            "label": "$Option.Limbo.WeeklyShallowSleepOnly",
+            "description": "$Option.Limbo.WeeklyShallowSleepOnly.desc",
             "cases": [
                 {
                     "name": "No",
@@ -152,8 +165,7 @@
                         }
                     }
                 }
-            ],
-            "description": "开启后仅领取每周浅眠域奖励，不进行深眠自动作战"
+            ]
         }
     }
 }
